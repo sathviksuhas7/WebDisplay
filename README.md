@@ -19,7 +19,7 @@ The application also includes account status management and session timeout hand
 ## Application Screenshots
 
 ### Login Page
-![Login Page](screenshots/login.png)
+![Login Page](screenshots/log.png)
 
 ### Dashboard
 ![Dashboard](screenshots/dashboard.png)
