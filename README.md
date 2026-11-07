@@ -1,8 +1,10 @@
 # WebDisplay – Banking Management System
 
-A web-based banking management application built using **Java, Spring Boot, MySQL, Hibernate, and JSP**. WebDisplay provides a centralised interface for managing bank accounts, performing financial transactions, tracking transaction history, and handling user sessions.
+A web-based banking management application built using **Java, Spring Boot, Spring Data JPA, Hibernate ORM, MySQL, and JSP**.
 
-The project focuses on implementing essential banking operations with a layered application architecture, database integration, input validation, and session-based authentication.
+WebDisplay provides a centralised interface for managing bank accounts, performing financial transactions, tracking transaction history, and handling user sessions.
+
+The project focuses on implementing essential banking operations through a layered application architecture, database integration, input validation, and session-based authentication.
 
 ---
 
@@ -10,7 +12,7 @@ The project focuses on implementing essential banking operations with a layered 
 
 WebDisplay is designed to simplify everyday banking management operations through an interactive web interface backed by a Spring Boot application.
 
-Users can register and log in, create and manage bank accounts, perform deposits and withdrawals, view transaction records, and manage account information.
+Authenticated users can create and manage bank accounts, perform deposits and withdrawals, view transaction records, and manage account information.
 
 The application also includes account status management and session timeout handling to control access to authenticated features.
 
@@ -31,7 +33,7 @@ The application also includes account status management and session timeout hand
 ## Key Features
 
 ### 1. User Authentication and Session Management
-- User registration and login.
+- User login and logout.
 - Session-based user authentication.
 - Automatic session timeout.
 - Session validation for protected application requests.
@@ -43,7 +45,7 @@ The application also includes account status management and session timeout hand
 - Create new bank accounts.
 - Automatically generate unique account numbers.
 - Search for accounts using account details.
-- View all registered accounts.
+- View all registered bank accounts.
 - Edit account holder information.
 - Manage branch name and district information.
 - Record account creation date and time.
@@ -79,15 +81,19 @@ The application also includes account status management and session timeout hand
 
 | Category | Technologies |
 |---|---|
-| Programming Language | Java |
-| Backend Framework | Spring Boot |
+| Programming Language | Java 17 |
+| Backend Framework | Spring Boot 4.1.2 |
+| Web Framework | Spring Web MVC |
+| ORM Framework | Hibernate ORM 7.4.13.Final |
+| Persistence Layer | Spring Data JPA |
 | Frontend | JSP, HTML, CSS, JavaScript |
 | Database | MySQL |
-| ORM | Hibernate |
-| Data Access | Spring Data JPA |
+| Database Connectivity | MySQL Connector/J |
 | Build Tool | Maven |
 | Web Server | Embedded Apache Tomcat |
-| Development Environment | IntelliJ IDEA |
+| Logging | Log4j2 |
+| Monitoring | Spring Boot Actuator |
+| Development Tool | IntelliJ IDEA |
 
 ---
 
@@ -96,22 +102,25 @@ The application also includes account status management and session timeout hand
 The application follows a layered architecture to separate request handling, business logic, data access, and presentation.
 
 ```text
-              User Interface
-                    |
-                    v
-          JSP / HTML / CSS / JS
-                    |
-                    v
-             Controller Layer
-                    |
-                    v
-              Service Layer
-                    |
-                    v
-             Repository Layer
-                    |
-                    v
-              MySQL Database
+             User Interface
+                   |
+                   v
+         JSP / HTML / CSS / JS
+                   |
+                   v
+            Controller Layer
+                   |
+                   v
+             Service Layer
+                   |
+                   v
+            Repository Layer
+                   |
+                   v
+             Hibernate ORM
+                   |
+                   v
+             MySQL Database
 ```
 
 ### Package Structure
@@ -165,7 +174,7 @@ com.epdcl.webdisplay
 
 - **Controller Layer:** Handles incoming HTTP requests and application responses.
 - **Service Layer:** Implements banking operations, validations, and business rules.
-- **Repository Layer:** Communicates with the MySQL database using Spring Data JPA.
+- **Repository Layer:** Communicates with the database using Spring Data JPA.
 - **Entity Layer:** Represents database entities.
 - **DTO Layer:** Transfers application data between layers.
 - **Mapper Layer:** Converts entities into DTOs and vice versa.
@@ -181,11 +190,11 @@ The application uses MySQL for persistent storage.
 
 The main database entities include:
 
-- **User:** Stores user account information for application authentication.
+- **User:** Stores user information used for application authentication.
 - **Account:** Stores bank account details, balance, branch, district, and account status.
 - **Transaction:** Maintains deposit and withdrawal transaction records associated with accounts.
 
-Hibernate is used for ORM, while Spring Data JPA provides database access and repository operations.
+Hibernate ORM provides the JPA implementation, while Spring Data JPA simplifies database access and repository operations.
 
 ---
 
@@ -286,7 +295,7 @@ The following features are planned for subsequent development:
 
 **Core banking management functionality implemented.**
 
-The application currently supports user authentication, session management, account operations, transaction processing, and account information management.
+The application supports user authentication, session management, account operations, transaction processing, and account information management.
 
 Additional functionality is planned as part of ongoing development.
 
@@ -297,4 +306,3 @@ Additional functionality is planned as part of ongoing development.
 **O Sathvik Suhas**
 
 Java | Spring Boot | MySQL | Backend Development
-

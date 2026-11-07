@@ -94,19 +94,8 @@
     </div>
 
     <div class="message success">
-        ${param.registered != null ? 'Registration successful! Please login.' : ''}
-    </div>
-
-    <div class="message success">
         ${param.logout != null ? 'You have been logged out successfully!' : ''}
     </div>
-
-    <p style="text-align:center;">
-        Don't have an account?
-        <a href="${pageContext.request.contextPath}/register">
-            Register here
-        </a>
-    </p>
 
 </div>
 

@@ -22,26 +22,6 @@ public class LoginController {
         return "login";
     }
 
-    // Display registration page
-    @GetMapping("/register")
-    public String showRegisterPage() {
-        return "register";
-    }
-
-    // Register new user
-    @PostMapping("/register")
-    public String registerUser(@ModelAttribute User user, Model model) {
-
-        try {
-            userService.registerUser(user);
-            return "redirect:/login?registered=true";
-
-        } catch (RuntimeException e) {
-            model.addAttribute("error", e.getMessage());
-            return "register";
-        }
-    }
-
     // Login user
     @PostMapping("/login")
     public String loginUser(

@@ -5,13 +5,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Handle specific exception - AccountException
+    // Handle AccountException
     @ExceptionHandler(AccountException.class)
     public ResponseEntity<ErrorDetails> handleAccountException(
             AccountException exception,
@@ -24,10 +25,32 @@ public class GlobalExceptionHandler {
                 "ACCOUNT_NOT_FOUND"
         );
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(
+                errorDetails,
+                HttpStatus.NOT_FOUND
+        );
     }
 
-    // Handle Generic exception
+    // Handle missing resources (404)
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorDetails> handleNoResourceFoundException(
+            NoResourceFoundException exception,
+            WebRequest webRequest) {
+
+        ErrorDetails errorDetails = new ErrorDetails(
+                LocalDateTime.now(),
+                exception.getMessage(),
+                webRequest.getDescription(false),
+                "RESOURCE_NOT_FOUND"
+        );
+
+        return new ResponseEntity<>(
+                errorDetails,
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    // Handle generic exceptions (500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGenericException(
             Exception exception,
