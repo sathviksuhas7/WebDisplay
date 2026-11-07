@@ -1,3 +1,4 @@
+
 package com.epdcl.webdisplay.entity;
 
 import jakarta.persistence.*;
@@ -18,6 +19,10 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role = Role.EMPLOYEE;
 
     public Long getId() {
         return id;
@@ -49,5 +54,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

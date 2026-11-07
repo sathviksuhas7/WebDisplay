@@ -16,6 +16,8 @@ public class AccountDto implements Serializable {
     private String branchName;
     private String district;
 
+    private Long customerId;
+
     public String getId() {
         return id;
     }
@@ -78,5 +80,13 @@ public class AccountDto implements Serializable {
 
     public void setDistrict(String district) {
         this.district = district;
+    }
+
+    public Long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
     }
 }

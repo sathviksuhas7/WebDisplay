@@ -1,6 +1,7 @@
 package com.epdcl.webdisplay.controller;
 
 import com.epdcl.webdisplay.entity.User;
+import com.epdcl.webdisplay.entity.Role;
 import com.epdcl.webdisplay.service.impl.UserService;
 
 import jakarta.servlet.http.HttpSession;
@@ -16,13 +17,11 @@ public class LoginController {
     @Autowired
     private UserService userService;
 
-    // Display login page
     @GetMapping("/login")
     public String showLoginPage() {
         return "login";
     }
 
-    // Login user
     @PostMapping("/login")
     public String loginUser(
             @RequestParam String username,
@@ -33,15 +32,31 @@ public class LoginController {
         User user = userService.authenticateUser(username, password);
 
         if (user != null) {
+
             session.setAttribute("loggedInUser", user);
-            return "redirect:/";
+            session.setAttribute("role", user.getRole().name());
+
+            if (user.getRole() == Role.ADMIN) {
+                return "redirect:/admin/dashboard";
+            }
+
+            if (user.getRole() == Role.EMPLOYEE) {
+                return "redirect:/employee/dashboard";
+            }
+
+            if (user.getRole() == Role.CUSTOMER) {
+                return "redirect:/customer/dashboard";
+            }
+
+            if (user.getRole() == Role.HELPDESK) {
+                return "redirect:/helpdesk/dashboard";
+            }
         }
 
         model.addAttribute("error", "Invalid username or password");
         return "login";
     }
 
-    // Logout
     @GetMapping("/logout")
     public String logout(HttpSession session) {
         session.invalidate();

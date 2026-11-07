@@ -4,7 +4,15 @@ import com.epdcl.webdisplay.dto.AccountDto;
 
 import com.epdcl.webdisplay.dto.TransactionDto;
 
+import com.epdcl.webdisplay.dto.CustomerAccountStatementDto;
+
+import com.epdcl.webdisplay.dto.HelpdeskAccountDto;
+
+import com.epdcl.webdisplay.dto.HelpdeskTransactionDto;
+
 import java.util.List;
+
+import com.epdcl.webdisplay.dto.AccountDto;
 
 public interface AccountService {
 
@@ -39,6 +47,17 @@ public interface AccountService {
             String branchName,
             String district
     );
+
+    CustomerAccountStatementDto getCustomerAccountStatement(
+            Long accountId, Long customerId);
+
+    List<AccountDto> getAccountsByCustomerId(Long customerId);
+
+    List<TransactionDto> getCustomerTransactionHistory(Long accountId, Long customerId);
+
+    List<HelpdeskAccountDto> getHelpdeskCustomerAccounts(Long customerId);
+
+    List<HelpdeskTransactionDto> getHelpdeskCustomerTransactions(Long customerId);
 
 
 }

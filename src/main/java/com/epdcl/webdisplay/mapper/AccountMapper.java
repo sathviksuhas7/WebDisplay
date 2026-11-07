@@ -14,7 +14,6 @@ public class AccountMapper {
         account.setBalance(accountDto.getBalance());
         account.setActive(accountDto.isActive());
 
-        // Branch and District
         account.setBranchName(accountDto.getBranchName());
         account.setDistrict(accountDto.getDistrict());
 
@@ -25,18 +24,20 @@ public class AccountMapper {
 
         AccountDto accountDto = new AccountDto();
 
-        // Convert Long ID to String
         accountDto.setId(String.valueOf(account.getId()));
-
         accountDto.setAccountNumber(account.getAccountNumber());
         accountDto.setAccountHolderName(account.getAccountHolderName());
         accountDto.setBalance(account.getBalance());
         accountDto.setActive(account.isActive());
         accountDto.setCreatedAt(account.getCreatedAt());
 
-        // Branch and District
         accountDto.setBranchName(account.getBranchName());
         accountDto.setDistrict(account.getDistrict());
+
+        // Customer ID
+        if (account.getCustomer() != null) {
+            accountDto.setCustomerId(account.getCustomer().getCustomerId());
+        }
 
         return accountDto;
     }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "accounts")
+
 public class Account {
 
     @Column(name = "branch_name")
@@ -42,6 +43,10 @@ public class Account {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
 
     public Account() {
     }
@@ -109,5 +114,13 @@ public class Account {
 
     public void setDistrict(String district) {
         this.district = district;
+
+    }
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 }

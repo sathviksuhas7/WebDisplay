@@ -2,21 +2,22 @@
 package com.epdcl.webdisplay.service.impl;
 
 import com.epdcl.webdisplay.dto.AccountDto;
+import com.epdcl.webdisplay.dto.TransactionDto;
 import com.epdcl.webdisplay.entity.Account;
+import com.epdcl.webdisplay.entity.Customer;
+import com.epdcl.webdisplay.entity.Transaction;
 import com.epdcl.webdisplay.exception.AccountException;
 import com.epdcl.webdisplay.mapper.AccountMapper;
-import com.epdcl.webdisplay.repo.AccountRepository;
-
-import com.epdcl.webdisplay.dto.TransactionDto;
 import com.epdcl.webdisplay.mapper.TransactionMapper;
-
+import com.epdcl.webdisplay.repo.AccountRepository;
+import com.epdcl.webdisplay.repo.CustomerRepository;
 import com.epdcl.webdisplay.repo.TransactionRepository;
-import com.epdcl.webdisplay.entity.Transaction;
-
-
-import org.springframework.transaction.annotation.Transactional;
+import com.epdcl.webdisplay.dto.CustomerAccountStatementDto;
+import com.epdcl.webdisplay.dto.HelpdeskAccountDto;
+import com.epdcl.webdisplay.dto.HelpdeskTransactionDto;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -29,14 +30,16 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
-
+    private final CustomerRepository customerRepository;
 
     public AccountServiceImpl(
             AccountRepository accountRepository,
-            TransactionRepository transactionRepository) {
+            TransactionRepository transactionRepository,
+            CustomerRepository customerRepository) {
 
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.customerRepository = customerRepository;
     }
 
     // Generate Account Number
@@ -52,9 +55,17 @@ public class AccountServiceImpl implements AccountService {
         return prefix + date + String.format("%04d", randomNumber);
     }
 
-    // Add Account
+    // Add Account and Link It to a Customer
     @Override
+    @Transactional
     public AccountDto createAccount(AccountDto accountDto) {
+
+        if (accountDto.getCustomerId() == null) {
+            throw new AccountException("Customer ID is required");
+        }
+
+        Customer customer = customerRepository.findById(accountDto.getCustomerId())
+                .orElseThrow(() -> new AccountException("Customer not found"));
 
         String accountNumber;
 
@@ -65,6 +76,8 @@ public class AccountServiceImpl implements AccountService {
         Account account = AccountMapper.mapToAccount(accountDto);
 
         account.setAccountNumber(accountNumber);
+        account.setCustomer(customer);
+        account.setAccountHolderName(customer.getCustomerName());
 
         Account accountSaved = accountRepository.save(account);
 
@@ -81,7 +94,6 @@ public class AccountServiceImpl implements AccountService {
 
         return AccountMapper.mapToAccountDto(account);
     }
-
 
     // Deposit
     @Transactional
@@ -107,7 +119,6 @@ public class AccountServiceImpl implements AccountService {
 
         Account savedAccount = accountRepository.save(account);
 
-        // Create deposit transaction
         Transaction transaction = new Transaction();
         transaction.setAccount(savedAccount);
         transaction.setTransactionType("DEPOSIT");
@@ -118,7 +129,6 @@ public class AccountServiceImpl implements AccountService {
 
         return AccountMapper.mapToAccountDto(savedAccount);
     }
-
 
     // Withdraw
     @Transactional
@@ -148,7 +158,6 @@ public class AccountServiceImpl implements AccountService {
 
         Account savedAccount = accountRepository.save(account);
 
-        // Create withdrawal transaction
         Transaction transaction = new Transaction();
         transaction.setAccount(savedAccount);
         transaction.setTransactionType("WITHDRAWAL");
@@ -171,17 +180,20 @@ public class AccountServiceImpl implements AccountService {
                 .collect(Collectors.toList());
     }
 
+    // Get Accounts By Customer ID
+    @Override
+    @Transactional(readOnly = true)
+    public List<AccountDto> getAccountsByCustomerId(Long customerId) {
 
-    // Delete Account
-//    @Override
-//    public void deleteAccount(Long id) {
-//
-//        Account account = accountRepository
-//                .findById(id)
-//                .orElseThrow(() -> new AccountException("Account not found"));
-//
-//        accountRepository.deleteById(id);
-//    }
+        List<Account> accounts =
+                accountRepository.findByCustomerCustomerId(customerId);
+
+        return accounts.stream()
+                .map(AccountMapper::mapToAccountDto)
+                .collect(Collectors.toList());
+    }
+
+    // Get Account By Account Number
     @Override
     public AccountDto getAccountByAccountNumber(String accountNumber) {
 
@@ -216,8 +228,7 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.save(account);
     }
 
-
-    // Edit Account Balance - Active Accounts Only
+    // Edit Account Balance
     @Override
     public AccountDto updateBalance(Long id, double newBalance) {
 
@@ -230,7 +241,6 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() ->
                         new AccountException("Account not found"));
 
-        // Allow editing only active accounts
         if (!account.isActive()) {
             throw new AccountException(
                     "Cannot edit an inactive account");
@@ -243,28 +253,44 @@ public class AccountServiceImpl implements AccountService {
         return AccountMapper.mapToAccountDto(savedAccount);
     }
 
-
     // Get Transaction History
     @Override
     @Transactional(readOnly = true)
     public List<TransactionDto> getTransactionHistory(Long accountId) {
 
-        // Check whether account exists
         accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountException("Account not found"));
 
-        // Fetch transactions, newest first
         List<Transaction> transactions =
                 transactionRepository
                         .findByAccount_IdOrderByTransactionDateDesc(accountId);
 
-        // Convert entities into DTOs
         return transactions.stream()
                 .map(TransactionMapper::mapToTransactionDto)
                 .collect(Collectors.toList());
     }
 
-    // Edit Account - Active Accounts Only
+    // Get Transaction History for a Specific Customer
+    @Override
+    @Transactional(readOnly = true)
+    public List<TransactionDto> getCustomerTransactionHistory(
+            Long accountId, Long customerId) {
+
+        Account account = accountRepository
+                .findByIdAndCustomerCustomerId(accountId, customerId)
+                .orElseThrow(() -> new AccountException(
+                        "Account not found for this customer"));
+
+        List<Transaction> transactions =
+                transactionRepository
+                        .findByAccount_IdOrderByTransactionDateDesc(account.getId());
+
+        return transactions.stream()
+                .map(TransactionMapper::mapToTransactionDto)
+                .collect(Collectors.toList());
+    }
+
+    // Edit Account
     @Override
     public AccountDto updateAccount(
             Long id,
@@ -300,5 +326,89 @@ public class AccountServiceImpl implements AccountService {
         return AccountMapper.mapToAccountDto(savedAccount);
     }
 
+    // Get Customer Account Statement
+    @Override
+    @Transactional(readOnly = true)
+    public CustomerAccountStatementDto getCustomerAccountStatement(
+            Long accountId, Long customerId) {
 
+        Account account = accountRepository
+                .findByIdAndCustomerCustomerId(accountId, customerId)
+                .orElseThrow(() ->
+                        new AccountException("Account not found for this customer"));
+
+        List<TransactionDto> transactions = getCustomerTransactionHistory(
+                accountId, customerId);
+
+        return new CustomerAccountStatementDto(
+                account.getAccountNumber(),
+                account.getAccountHolderName(),
+                account.getBranchName(),
+                account.getDistrict(),
+                account.getBalance(),
+                account.isActive(),
+                transactions
+        );
+    }
+
+    // Helpdesk Views Customer Accounts
+    @Override
+    @Transactional(readOnly = true)
+    public List<HelpdeskAccountDto> getHelpdeskCustomerAccounts(Long customerId) {
+
+        List<Account> accounts =
+                accountRepository.findByCustomerCustomerId(customerId);
+
+        return accounts.stream()
+                .map(account -> {
+                    String accountNumber = account.getAccountNumber();
+
+                    String maskedNumber = accountNumber.length() > 4
+                            ? "XXXX" + accountNumber.substring(accountNumber.length() - 4)
+                            : "XXXX";
+
+                    return new HelpdeskAccountDto(
+                            maskedNumber,
+                            account.getAccountHolderName(),
+                            account.getBranchName(),
+                            account.getDistrict(),
+                            account.isActive()
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    // Helpdesk Views Customer Transaction History
+    @Override
+    @Transactional(readOnly = true)
+    public List<HelpdeskTransactionDto> getHelpdeskCustomerTransactions(
+            Long customerId) {
+
+        List<Account> accounts =
+                accountRepository.findByCustomerCustomerId(customerId);
+
+        return accounts.stream()
+                .flatMap(account ->
+                        transactionRepository
+                                .findByAccount_IdOrderByTransactionDateDesc(account.getId())
+                                .stream()
+                                .map(transaction -> {
+
+                                    String number = account.getAccountNumber();
+
+                                    String maskedNumber = number.length() > 4
+                                            ? "XXXX" + number.substring(number.length() - 4)
+                                            : "XXXX";
+
+                                    return new HelpdeskTransactionDto(
+                                            transaction.getId(),
+                                            maskedNumber,
+                                            transaction.getTransactionType(),
+                                            transaction.getAmount(),
+                                            transaction.getTransactionDate(),
+                                            transaction.getBalanceAfterTransaction()
+                                    );
+                                }))
+                .collect(Collectors.toList());
+    }
 }

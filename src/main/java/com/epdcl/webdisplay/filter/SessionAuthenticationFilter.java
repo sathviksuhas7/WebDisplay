@@ -18,7 +18,6 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
 
-        // Allow internal JSP forwards and error dispatches
         if (request.getDispatcherType() != DispatcherType.REQUEST) {
             return true;
         }
@@ -56,18 +55,70 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             String path = request.getServletPath();
 
             if (path.startsWith("/api/")) {
-
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write(
+                        "{\"message\":\"SESSION_EXPIRED\"}");
+            } else {
+                response.sendRedirect(
+                        request.getContextPath() + "/login?expired=true");
+            }
+
+            return;
+        }
+
+// Check role-based access
+        String role = (String) session.getAttribute("role");
+        String path = request.getServletPath();
+        String method = request.getMethod();
+
+
+        boolean allowed = true;
+
+// Dashboard access
+        if (path.startsWith("/admin/")) {
+            allowed = "ADMIN".equals(role);
+        }
+        else if (path.startsWith("/employee/")) {
+            allowed = "EMPLOYEE".equals(role);
+        }
+        else if (path.startsWith("/customer/")) {
+            allowed = "CUSTOMER".equals(role);
+        }
+        else if (path.startsWith("/helpdesk/")) {
+            allowed = "HELPDESK".equals(role);
+        }
+        else if (path.startsWith("/api/helpdesk/")) {
+            allowed = "HELPDESK".equals(role);
+        }
+        else if (path.startsWith("/api/customer/")) {
+            allowed = "CUSTOMER".equals(role);
+        }
+
+// Customer management API
+        else if (path.startsWith("/api/customers")) {
+            allowed = "EMPLOYEE".equals(role);
+        }
+
+// Account and transaction APIs
+        else if (path.startsWith("/api/accounts")) {
+            allowed = "EMPLOYEE".equals(role);
+        }
+
+        if (!allowed) {
+
+            if (path.startsWith("/api/")) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType("application/json");
                 response.setCharacterEncoding("UTF-8");
 
                 response.getWriter().write(
-                        "{\"message\":\"SESSION_EXPIRED\"}");
-
+                        "{\"message\":\"ACCESS_DENIED\"}");
             } else {
-
-                response.sendRedirect(
-                        request.getContextPath() + "/login?expired=true");
+                response.sendError(
+                        HttpServletResponse.SC_FORBIDDEN,
+                        "You are not authorized to access this page.");
             }
 
             return;
@@ -80,4 +131,6 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
+
 }

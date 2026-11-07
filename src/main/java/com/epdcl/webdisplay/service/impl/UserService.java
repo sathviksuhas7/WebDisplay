@@ -8,4 +8,5 @@ public interface UserService {
 
     User authenticateUser(String username, String password);
 
+    User createCustomerLogin(String username, String email, String password);
 }
