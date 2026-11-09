@@ -143,4 +143,22 @@ public class SupportTicketController {
                 )
         );
     }
+
+    // Helpdesk dashboard statistics
+    @GetMapping("/helpdesk/tickets/statistics")
+    public ResponseEntity<Map<String, Long>> getTicketStatistics() {
+
+        return ResponseEntity.ok(
+                ticketService.getTicketStatistics());
+    }
+
+    // Filter tickets by status and priority
+    @GetMapping("/helpdesk/tickets/filter")
+    public ResponseEntity<List<SupportTicketDto>> filterTickets(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority) {
+
+        return ResponseEntity.ok(
+                ticketService.filterTickets(status, priority));
+    }
 }

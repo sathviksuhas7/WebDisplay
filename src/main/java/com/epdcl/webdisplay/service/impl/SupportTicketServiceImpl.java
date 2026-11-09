@@ -13,6 +13,9 @@ import com.epdcl.webdisplay.repo.EmployeeRepository;
 import com.epdcl.webdisplay.repo.SupportTicketRepository;
 import com.epdcl.webdisplay.repo.TicketRemarkRepository;
 
+import java.util.Map;
+import java.util.HashMap;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -276,6 +279,53 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                         remark.getRemarks(),
                         remark.getCreatedAt()
                 ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Long> getTicketStatistics() {
+
+        Map<String, Long> statistics = new HashMap<>();
+
+        statistics.put("total", ticketRepository.count());
+        statistics.put("open", ticketRepository.countByStatus("OPEN"));
+        statistics.put("inProgress", ticketRepository.countByStatus("IN_PROGRESS"));
+        statistics.put("resolved", ticketRepository.countByStatus("RESOLVED"));
+        statistics.put("closed", ticketRepository.countByStatus("CLOSED"));
+
+        return statistics;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SupportTicketDto> filterTickets(
+            String status, String priority) {
+
+        List<SupportTicket> tickets;
+
+        boolean hasStatus = status != null && !status.isBlank();
+        boolean hasPriority = priority != null && !priority.isBlank();
+
+        if (hasStatus && hasPriority) {
+            tickets = ticketRepository.findByStatusAndPriority(
+                    status.trim().toUpperCase(),
+                    priority.trim().toUpperCase());
+
+        } else if (hasStatus) {
+            tickets = ticketRepository.findByStatus(
+                    status.trim().toUpperCase());
+
+        } else if (hasPriority) {
+            tickets = ticketRepository.findByPriority(
+                    priority.trim().toUpperCase());
+
+        } else {
+            tickets = ticketRepository.findAllByOrderByCreatedAtDesc();
+        }
+
+        return tickets.stream()
+                .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 }

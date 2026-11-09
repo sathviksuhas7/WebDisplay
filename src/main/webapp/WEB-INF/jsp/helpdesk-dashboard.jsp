@@ -115,6 +115,33 @@
         .muted {
             color: #666;
         }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #183153;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 10px;
+            font-size: 15px;
+            color: #666;
+        }
+
+        .stat-card p {
+            font-size: 27px;
+            font-weight: bold;
+            margin: 0;
+        }
     </style>
 </head>
 
@@ -131,6 +158,37 @@
     <p class="muted">
         Search customers, investigate transactions and manage customer support tickets.
     </p>
+    <!-- DASHBOARD STATISTICS -->
+    <div class="section">
+        <h2>Dashboard Statistics</h2>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Total Tickets</h3>
+                <p id="totalTickets">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Open</h3>
+                <p id="openTickets">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>In Progress</h3>
+                <p id="progressTickets">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Resolved</h3>
+                <p id="resolvedTickets">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Closed</h3>
+                <p id="closedTickets">0</p>
+            </div>
+        </div>
+    </div>
 
     <!-- CUSTOMER SEARCH -->
     <div class="section">
@@ -166,6 +224,32 @@
         <div id="transactionResults" class="result">
             <p class="muted">Select a customer to investigate transactions.</p>
         </div>
+    </div>
+
+    <!-- TICKET FILTERS -->
+    <div class="section">
+        <h2>Filter Support Tickets</h2>
+
+        <select id="filterStatus">
+            <option value="">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="CLOSED">Closed</option>
+        </select>
+
+        <select id="filterPriority">
+            <option value="">All Priorities</option>
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+            <option value="URGENT">Urgent</option>
+        </select>
+
+        <button onclick="filterTickets()">Apply Filters</button>
+        <button onclick="resetTicketFilters()">Reset</button>
+
+        <div id="filteredTickets" class="result"></div>
     </div>
 
     <!-- ALL TICKETS -->
@@ -544,6 +628,8 @@
 
             loadAllTickets();
             loadMyTickets();
+            loadTicketStatistics();
+            filterTickets();
 
         } catch (error) {
             alert("Ticket update failed: " + error.message);
@@ -651,6 +737,58 @@
     // Load ticket lists when dashboard opens
     loadAllTickets();
     loadMyTickets();
+    loadTicketStatistics();
+
+    // LOAD DASHBOARD STATISTICS
+    async function loadTicketStatistics() {
+
+        try {
+            const stats = await apiRequest(
+                "/helpdesk/tickets/statistics"
+            );
+
+            document.getElementById("totalTickets").innerText = stats.total;
+            document.getElementById("openTickets").innerText = stats.open;
+            document.getElementById("progressTickets").innerText = stats.inProgress;
+            document.getElementById("resolvedTickets").innerText = stats.resolved;
+            document.getElementById("closedTickets").innerText = stats.closed;
+
+        } catch (error) {
+            console.error("Statistics loading failed:", error);
+        }
+    }
+
+    // FILTER TICKETS
+    async function filterTickets() {
+
+        const status = document.getElementById("filterStatus").value;
+        const priority = document.getElementById("filterPriority").value;
+
+        const params = new URLSearchParams();
+
+        if (status) params.append("status", status);
+        if (priority) params.append("priority", priority);
+
+        try {
+            const tickets = await apiRequest(
+                "/helpdesk/tickets/filter?" + params.toString()
+            );
+
+            displayTickets(tickets, "filteredTickets");
+
+        } catch (error) {
+            alert("Filtering failed: " + error.message);
+        }
+    }
+
+    // RESET FILTERS
+    function resetTicketFilters() {
+
+        document.getElementById("filterStatus").value = "";
+        document.getElementById("filterPriority").value = "";
+
+        filterTickets();
+    }
 
 </script>
 

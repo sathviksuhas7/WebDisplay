@@ -1,18 +1,18 @@
+
 package com.epdcl.webdisplay.service.impl;
 
 import com.epdcl.webdisplay.dto.SupportTicketDto;
 import com.epdcl.webdisplay.dto.TicketRemarkDto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SupportTicketService {
 
-    // Customer operations
     SupportTicketDto createTicket(Long customerId, SupportTicketDto dto);
 
     List<SupportTicketDto> getCustomerTickets(Long customerId);
 
-    // Helpdesk operations
     List<SupportTicketDto> getAllTickets();
 
     SupportTicketDto updateTicket(
@@ -22,10 +22,11 @@ public interface SupportTicketService {
 
     List<SupportTicketDto> getMyAssignedTickets(Long userId);
 
-    // Ticket investigation remarks
-    TicketRemarkDto addRemark(
-            Long ticketId, Long userId, String remarks);
+    TicketRemarkDto addRemark(Long ticketId, Long userId, String remarks);
 
-    List<TicketRemarkDto> getTicketRemarks(
-            Long ticketId, Long userId);
+    List<TicketRemarkDto> getTicketRemarks(Long ticketId, Long userId);
+
+    Map<String, Long> getTicketStatistics();
+
+    List<SupportTicketDto> filterTickets(String status, String priority);
 }
