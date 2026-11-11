@@ -9,5 +9,6 @@ import java.util.List;
 public interface TransactionRepository
         extends JpaRepository<Transaction, Long> {
 
-    List<Transaction> findByAccount_IdOrderByTransactionDateDesc(Long accountId);
+    List<Transaction> findByAccount_IdOrderByTransactionDateDesc(
+            Long accountId);
 }

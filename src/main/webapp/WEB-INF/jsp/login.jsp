@@ -74,7 +74,7 @@
 
     <form action="${pageContext.request.contextPath}/login"
           method="post">
-
+        <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
         <input type="text"
                name="username"
                placeholder="Enter Username"

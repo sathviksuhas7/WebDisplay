@@ -39,6 +39,9 @@ public class SupportTicket {
     @Column(name = "resolution_remarks", columnDefinition = "TEXT")
     private String resolutionRemarks;
 
+    @Column(name = "customer_remarks", columnDefinition = "TEXT")
+    private String customerRemarks;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -130,5 +133,13 @@ public class SupportTicket {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getCustomerRemarks() {
+        return customerRemarks;
+    }
+
+    public void setCustomerRemarks(String customerRemarks) {
+        this.customerRemarks = customerRemarks;
     }
 }

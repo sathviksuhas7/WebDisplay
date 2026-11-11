@@ -1,8 +1,10 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="${sessionScope.csrfToken}">
     <title>MyBank - Account Management</title>
 
     <style>
@@ -270,8 +272,16 @@
 
     <div class="header-right">
         <span>ACCOUNT MANAGEMENT</span>
-        <a href="${pageContext.request.contextPath}/logout"
-           class="logout-button">Logout</a>
+        <form action="<%= request.getContextPath() %>/logout"
+              method="post"
+              style="display:inline;">
+            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
+            <button type="submit"
+                    style="background:#dc2626; color:white; padding:10px 18px;
+                           border:0; border-radius:7px; cursor:pointer;">
+                Logout
+            </button>
+        </form>
     </div>
 </header>
 
@@ -875,7 +885,11 @@ function saveAccountChanges() {
     fetch("/api/accounts/" + encodeURIComponent(id) + "/edit", {
         method: "PUT",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": document.querySelector(
+                'meta[name="csrf-token"]'
+            ).content,
+            ...(options.headers || {})
         },
         body: JSON.stringify({
             accountHolderName: name,

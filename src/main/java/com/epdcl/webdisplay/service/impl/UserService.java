@@ -1,6 +1,8 @@
+
 package com.epdcl.webdisplay.service.impl;
 
 import com.epdcl.webdisplay.entity.User;
+import com.epdcl.webdisplay.entity.Role;
 
 public interface UserService {
 
@@ -8,5 +10,16 @@ public interface UserService {
 
     User authenticateUser(String username, String password);
 
-    User createCustomerLogin(String username, String email, String password);
+    User createCustomerLogin(
+            String username,
+            String email,
+            String password
+    );
+
+    User createStaffLogin(
+            String username,
+            String email,
+            String password,
+            Role role
+    );
 }

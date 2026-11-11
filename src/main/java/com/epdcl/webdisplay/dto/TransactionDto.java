@@ -12,6 +12,14 @@ public class TransactionDto {
     private LocalDateTime transactionDate;
     private double balanceAfterTransaction;
 
+    private String referenceNumber;
+    private String fromAccountNumber;
+    private String fromAccountName;
+    private String toAccountNumber;
+    private String toAccountName;
+    private String status;
+    private String description;
+
     public Long getId() {
         return id;
     }
@@ -58,5 +66,61 @@ public class TransactionDto {
 
     public void setBalanceAfterTransaction(double balanceAfterTransaction) {
         this.balanceAfterTransaction = balanceAfterTransaction;
+    }
+
+    public String getReferenceNumber() {
+        return referenceNumber;
+    }
+
+    public void setReferenceNumber(String referenceNumber) {
+        this.referenceNumber = referenceNumber;
+    }
+
+    public String getFromAccountNumber() {
+        return fromAccountNumber;
+    }
+
+    public void setFromAccountNumber(String fromAccountNumber) {
+        this.fromAccountNumber = fromAccountNumber;
+    }
+
+    public String getFromAccountName() {
+        return fromAccountName;
+    }
+
+    public void setFromAccountName(String fromAccountName) {
+        this.fromAccountName = fromAccountName;
+    }
+
+    public String getToAccountNumber() {
+        return toAccountNumber;
+    }
+
+    public void setToAccountNumber(String toAccountNumber) {
+        this.toAccountNumber = toAccountNumber;
+    }
+
+    public String getToAccountName() {
+        return toAccountName;
+    }
+
+    public void setToAccountName(String toAccountName) {
+        this.toAccountName = toAccountName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

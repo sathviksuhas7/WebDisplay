@@ -2,6 +2,7 @@
 package com.epdcl.webdisplay.mapper;
 
 import com.epdcl.webdisplay.dto.TransactionDto;
+import com.epdcl.webdisplay.entity.BankTransaction;
 import com.epdcl.webdisplay.entity.Transaction;
 
 public class TransactionMapper {
@@ -21,6 +22,29 @@ public class TransactionMapper {
 
         dto.setBalanceAfterTransaction(
                 transaction.getBalanceAfterTransaction());
+
+        BankTransaction bankTransaction =
+                transaction.getBankTransaction();
+
+        if (bankTransaction != null) {
+            dto.setReferenceNumber(
+                    bankTransaction.getReferenceNumber());
+
+            dto.setFromAccountNumber(
+                    bankTransaction.getFromAccountNumber());
+
+            dto.setFromAccountName(
+                    bankTransaction.getFromAccountName());
+
+            dto.setToAccountNumber(
+                    bankTransaction.getToAccountNumber());
+
+            dto.setToAccountName(
+                    bankTransaction.getToAccountName());
+
+            dto.setStatus(bankTransaction.getStatus());
+            dto.setDescription(bankTransaction.getDescription());
+        }
 
         return dto;
     }

@@ -16,6 +16,10 @@ public class Transaction {
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_transaction_id")
+    private BankTransaction bankTransaction;
+
     @Column(name = "transaction_type", nullable = false)
     private String transactionType;
 
@@ -47,6 +51,14 @@ public class Transaction {
 
     public void setAccount(Account account) {
         this.account = account;
+    }
+
+    public BankTransaction getBankTransaction() {
+        return bankTransaction;
+    }
+
+    public void setBankTransaction(BankTransaction bankTransaction) {
+        this.bankTransaction = bankTransaction;
     }
 
     public String getTransactionType() {

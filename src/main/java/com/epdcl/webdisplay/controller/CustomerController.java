@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import com.epdcl.webdisplay.dto.HelpdeskCustomerDto;
+import org.springframework.web.bind.annotation.RequestParam;
+
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
@@ -34,5 +38,15 @@ public class CustomerController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body("Customer created successfully. Customer ID: "
                         + customer.getCustomerId());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<HelpdeskCustomerDto>> searchCustomers(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String phone) {
+
+        return ResponseEntity.ok(
+                customerService.searchCustomers(name, phone)
+        );
     }
 }
