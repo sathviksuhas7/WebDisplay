@@ -2,7 +2,7 @@
 
 A web-based banking management application developed using **Java 17, Spring Boot, Spring Security, Spring Data JPA, Hibernate, MySQL, and JSP**.
 
-WebDisplay provides a banking interface with separate access for Admin, Employee, Customer, and Helpdesk roles. It supports banking operations, customer management, and Helpdesk workflows through a Spring Boot backend integrated with MySQL.
+WebDisplay provides a centralized interface for banking operations with separate access for Admin, Employee, Customer, and Helpdesk roles. The application includes banking transactions, customer management, and Helpdesk workflows, supported by a Spring Boot backend and MySQL database.
 
 ---
 
@@ -10,14 +10,14 @@ WebDisplay provides a banking interface with separate access for Admin, Employee
 
 WebDisplay is designed to manage banking operations through a web-based application.
 
-The application includes role-based access for four user types:
+The application supports four user roles:
 
-- **Admin:** Access to administrative functionality.
+- **Admin:** Access to administrative functionality and staff management.
 - **Employee:** Access to permitted banking operations.
 - **Customer:** Access to customer-related functionality.
 - **Helpdesk:** Access to customer support and ticket management functionality.
 
-Spring Security is used to manage authentication and role-based authorization, while session management and CSRF protection help secure application requests.
+Spring Security manages authentication and role-based authorization. Session-based authentication and CSRF protection are used to secure application requests.
 
 ---
 
@@ -47,13 +47,14 @@ Spring Security is used to manage authentication and role-based authorization, w
 
 - User login and logout.
 - Session-based authentication.
-- Role-based access control using Spring Security.
+- Authentication using Spring Security.
+- Role-based authorization.
 - CSRF token protection.
 - Session validation for protected requests.
 - Session invalidation during logout.
-- Restricted access to application endpoints based on user roles.
+- Restricted access to protected endpoints based on user roles.
 
-### 2. Role-Based Access
+### 2. Role-Based Access Control
 
 The application supports four roles:
 
@@ -62,7 +63,9 @@ The application supports four roles:
 - Customer
 - Helpdesk
 
-Each role has access to specific application functionality. Role permissions are enforced through Spring Security and tested against protected endpoints.
+Each role has specific permissions enforced through Spring Security.
+
+Role-based endpoint access has been tested to verify that users can access permitted functionality while unauthorized roles are restricted.
 
 ### 3. Banking Operations
 
@@ -70,6 +73,7 @@ Each role has access to specific application functionality. Role permissions are
 - Withdraw money from accounts.
 - Transfer funds between accounts.
 - Retrieve account information.
+- Update account balances through banking operations.
 - Persist banking operations in MySQL.
 
 ### 4. Helpdesk Management
@@ -77,17 +81,21 @@ Each role has access to specific application functionality. Role permissions are
 - Search for customers and retrieve customer details.
 - View masked account information.
 - Investigate customer transactions.
-- Create and manage support tickets.
+- Manage customer support tickets.
 - Assign support tickets.
 - Update ticket status.
 - Add remarks and maintain ticket history.
+- Access Helpdesk functionality through role-specific permissions.
 
-### 5. API Development and Testing
+### 5. REST API Development and Testing
 
 - Developed REST APIs using Spring Boot.
+- Implemented backend functionality using controller, service, and repository layers.
 - Integrated application services with MySQL using Spring Data JPA and Hibernate.
+- Used DTOs and mapper classes for data transfer.
+- Implemented exception handling for application errors.
 - Tested API functionality using Postman.
-- Verified role-specific endpoint permissions and restricted unauthorized access.
+- Verified role-specific endpoint permissions and unauthorized access restrictions.
 
 ---
 
@@ -100,12 +108,13 @@ Each role has access to specific application functionality. Role permissions are
 | Web Framework | Spring Web MVC |
 | Security | Spring Security, CSRF Protection |
 | Persistence | Spring Data JPA |
-| ORM | Hibernate |
+| ORM Framework | Hibernate |
 | Frontend | JSP, HTML, CSS, JavaScript |
 | Database | MySQL |
 | Database Connectivity | MySQL Connector/J |
 | Build Tool | Maven |
-| Development Tools | VS Code, Postman, Git, GitHub |
+| Development Tools | IntelliJ IDEA, VS Code, Postman |
+| Version Control | Git, GitHub |
 
 ---
 
@@ -155,9 +164,9 @@ The application uses **MySQL** for persistent data storage.
 
 The main data areas include:
 
-- **User:** Stores user information required for authentication and role management.
+- **User:** Stores user information used for authentication and role management.
 - **Account:** Stores banking account information and balances.
-- **Transaction:** Maintains records associated with banking transactions.
+- **Transaction:** Maintains records associated with banking operations.
 - **Support Tickets:** Stores Helpdesk ticket information, assignments, status updates, and remarks.
 
 Spring Data JPA and Hibernate are used for database operations and object-relational mapping.
@@ -184,7 +193,7 @@ git clone https://github.com/sathviksuhas7/WebDisplay.git
 
 ### 2. Open the Project
 
-Open the cloned project in your preferred Java IDE.
+Open the cloned project in IntelliJ IDEA or VS Code.
 
 Allow Maven to download and configure the dependencies defined in `pom.xml`.
 
@@ -216,7 +225,7 @@ spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 ```
 
-Set the environment variables in your IDE or execution environment:
+Set the following environment variables in your IDE or execution environment:
 
 ```text
 DB_URL=jdbc:mysql://localhost:3306/webdisplay_db
@@ -224,7 +233,7 @@ DB_USERNAME=your_mysql_username
 DB_PASSWORD=your_mysql_password
 ```
 
-Do not commit actual database credentials to GitHub.
+Do not commit actual database credentials to the repository.
 
 ### 5. Run the Application
 
@@ -262,19 +271,23 @@ The following features are planned for further development:
 
 ## Project Status
 
-**Core banking and Helpdesk functionality implemented.**
+**Core banking operations, role-based access, and Helpdesk functionality implemented.**
 
 The application currently includes:
 
-- Multi-role access for Admin, Employee, Customer, and Helpdesk.
+- Four-role access management.
 - Spring Security authentication and authorization.
 - CSRF protection and session-based authentication.
-- Banking operations including deposits, withdrawals, and fund transfers.
-- Customer lookup and transaction investigation.
-- Helpdesk support-ticket assignment, status updates, and remarks history.
-- MySQL database integration and REST API testing.
+- Role-specific access restrictions tested through protected endpoints.
+- Deposits, withdrawals, and fund transfers.
+- Customer lookup and masked account information.
+- Transaction investigation.
+- Helpdesk ticket assignment and status management.
+- Remarks and ticket history.
+- MySQL database integration.
+- REST API development and testing using Postman.
 
-Further improvements and additional functionality are planned.
+The application is being developed further with additional functionality planned.
 
 ---
 
