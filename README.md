@@ -1,79 +1,93 @@
 # WebDisplay – Banking Management System
 
-A web-based banking management application built using **Java, Spring Boot, Spring Data JPA, Hibernate ORM, MySQL, and JSP**.
+A web-based banking management application developed using **Java 17, Spring Boot, Spring Security, Spring Data JPA, Hibernate, MySQL, and JSP**.
 
-WebDisplay provides a centralised interface for managing bank accounts, performing financial transactions, tracking transaction history, and handling user sessions.
-
-The project focuses on implementing essential banking operations through a layered application architecture, database integration, input validation, and session-based authentication.
+WebDisplay provides a banking interface with separate access for Admin, Employee, Customer, and Helpdesk roles. It supports banking operations, customer management, and Helpdesk workflows through a Spring Boot backend integrated with MySQL.
 
 ---
 
 ## Overview
 
-WebDisplay is designed to simplify everyday banking management operations through an interactive web interface backed by a Spring Boot application.
+WebDisplay is designed to manage banking operations through a web-based application.
 
-Authenticated users can create and manage bank accounts, perform deposits and withdrawals, view transaction records, and manage account information.
+The application includes role-based access for four user types:
 
-The application also includes account status management and session timeout handling to control access to authenticated features.
+- **Admin:** Access to administrative functionality.
+- **Employee:** Access to permitted banking operations.
+- **Customer:** Access to customer-related functionality.
+- **Helpdesk:** Access to customer support and ticket management functionality.
+
+Spring Security is used to manage authentication and role-based authorization, while session management and CSRF protection help secure application requests.
+
+---
 
 ## Application Screenshots
 
 ### Login Page
+
 ![Login Page](screenshots/log.png)
 
 ### Dashboard
+
 ![Dashboard](screenshots/dashboard.png)
 
 ### Account Management
+
 ![Account Management](screenshots/accounts.png)
 
 ### Transaction History
+
 ![Transaction History](screenshots/transactions.png)
+
+---
 
 ## Key Features
 
-### 1. User Authentication and Session Management
+### 1. Authentication and Security
+
 - User login and logout.
-- Session-based user authentication.
-- Automatic session timeout.
-- Session validation for protected application requests.
-- Logout with session invalidation.
-- Session heartbeat mechanism to monitor active sessions.
-- Multi-tab session activity handling.
+- Session-based authentication.
+- Role-based access control using Spring Security.
+- CSRF token protection.
+- Session validation for protected requests.
+- Session invalidation during logout.
+- Restricted access to application endpoints based on user roles.
 
-### 2. Account Management
-- Create new bank accounts.
-- Automatically generate unique account numbers.
-- Search for accounts using account details.
-- View all registered bank accounts.
-- Edit account holder information.
-- Manage branch name and district information.
-- Record account creation date and time.
-- Activate and deactivate accounts.
-- Restrict account editing and transactions for inactive accounts.
+### 2. Role-Based Access
 
-### 3. Banking Transactions
-- Deposit money into an account.
-- Withdraw money from an account.
-- Automatically update account balances.
-- Validate transaction amounts.
-- Prevent withdrawals when the available balance is insufficient.
-- Restrict transactions on inactive accounts.
+The application supports four roles:
 
-### 4. Transaction History
-- Maintain records of deposits and withdrawals.
-- Retrieve transaction history for individual accounts.
-- Display transaction ID and date.
-- Display transaction type and amount.
-- Track the account balance after each transaction.
-- Display transactions in descending date order.
+- Admin
+- Employee
+- Customer
+- Helpdesk
 
-### 5. Account Information Management
-- Maintain account holder details.
-- Store account number and balance.
-- Maintain branch and district information.
-- Track account status.
-- Store account creation timestamps.
+Each role has access to specific application functionality. Role permissions are enforced through Spring Security and tested against protected endpoints.
+
+### 3. Banking Operations
+
+- Deposit money into accounts.
+- Withdraw money from accounts.
+- Transfer funds between accounts.
+- Retrieve account information.
+- Persist banking operations in MySQL.
+
+### 4. Helpdesk Management
+
+- Search for customers and retrieve customer details.
+- View masked account information.
+- Investigate customer transactions.
+- Create and manage support tickets.
+- Assign support tickets.
+- Update ticket status.
+- Add remarks and maintain ticket history.
+
+### 5. API Development and Testing
+
+- Developed REST APIs using Spring Boot.
+- Integrated application services with MySQL using Spring Data JPA and Hibernate.
+- Tested API functionality using Postman.
+- Verified role-specific endpoint permissions and restricted unauthorized access.
 
 ---
 
@@ -82,119 +96,71 @@ The application also includes account status management and session timeout hand
 | Category | Technologies |
 |---|---|
 | Programming Language | Java 17 |
-| Backend Framework | Spring Boot 4.1.2 |
+| Backend Framework | Spring Boot |
 | Web Framework | Spring Web MVC |
-| ORM Framework | Hibernate ORM 7.4.13.Final |
-| Persistence Layer | Spring Data JPA |
+| Security | Spring Security, CSRF Protection |
+| Persistence | Spring Data JPA |
+| ORM | Hibernate |
 | Frontend | JSP, HTML, CSS, JavaScript |
 | Database | MySQL |
 | Database Connectivity | MySQL Connector/J |
 | Build Tool | Maven |
-| Web Server | Embedded Apache Tomcat |
-| Logging | Log4j2 |
-| Monitoring | Spring Boot Actuator |
-| Development Tool | IntelliJ IDEA |
+| Development Tools | VS Code, Postman, Git, GitHub |
 
 ---
 
 ## Application Architecture
 
-The application follows a layered architecture to separate request handling, business logic, data access, and presentation.
+The application follows a layered architecture to separate request handling, business logic, database operations, and presentation.
 
 ```text
-             User Interface
-                   |
-                   v
-         JSP / HTML / CSS / JS
-                   |
-                   v
-            Controller Layer
-                   |
-                   v
-             Service Layer
-                   |
-                   v
-            Repository Layer
-                   |
-                   v
-             Hibernate ORM
-                   |
-                   v
-             MySQL Database
-```
-
-### Package Structure
-
-```text
-com.epdcl.webdisplay
-│
-├── config
-│
-├── controller
-│   ├── AccountController
-│   ├── HomeController
-│   ├── LoginController
-│   └── SessionController
-│
-├── dto
-│   ├── AccountDto
-│   └── TransactionDto
-│
-├── entity
-│   ├── Account
-│   ├── Transaction
-│   └── User
-│
-├── exception
-│   ├── AccountException
-│   ├── ErrorDetails
-│   └── GlobalExceptionHandler
-│
-├── filter
-│   └── SessionAuthenticationFilter
-│
-├── mapper
-│   ├── AccountMapper
-│   └── TransactionMapper
-│
-├── repo
-│   ├── AccountRepository
-│   ├── TransactionRepository
-│   └── UserRepository
-│
-└── service
-    └── impl
-        ├── AccountService
-        ├── AccountServiceImpl
-        ├── UserService
-        └── UserServiceImpl
+              User Interface
+                    |
+                    v
+             JSP / HTML / CSS
+                    |
+                    v
+             Controller Layer
+                    |
+                    v
+              Service Layer
+                    |
+                    v
+             Repository Layer
+                    |
+                    v
+              Hibernate ORM
+                    |
+                    v
+              MySQL Database
 ```
 
 ### Architecture Responsibilities
 
 - **Controller Layer:** Handles incoming HTTP requests and application responses.
-- **Service Layer:** Implements banking operations, validations, and business rules.
-- **Repository Layer:** Communicates with the database using Spring Data JPA.
-- **Entity Layer:** Represents database entities.
-- **DTO Layer:** Transfers application data between layers.
+- **Service Layer:** Implements banking operations, business logic, and validations.
+- **Repository Layer:** Handles database interactions using Spring Data JPA.
+- **Entity Layer:** Represents application data and database entities.
+- **DTO Layer:** Transfers application data between different layers.
 - **Mapper Layer:** Converts entities into DTOs and vice versa.
-- **Exception Layer:** Handles application-specific errors and exceptions.
-- **Filter Layer:** Validates user sessions for protected requests.
+- **Exception Layer:** Handles application-specific exceptions.
+- **Security Layer:** Manages authentication, CSRF protection, and role-based access.
 - **Presentation Layer:** Provides the user interface through JSP pages.
 
 ---
 
 ## Database
 
-The application uses MySQL for persistent storage.
+The application uses **MySQL** for persistent data storage.
 
-The main database entities include:
+The main data areas include:
 
-- **User:** Stores user information used for application authentication.
-- **Account:** Stores bank account details, balance, branch, district, and account status.
-- **Transaction:** Maintains deposit and withdrawal transaction records associated with accounts.
+- **User:** Stores user information required for authentication and role management.
+- **Account:** Stores banking account information and balances.
+- **Transaction:** Maintains records associated with banking transactions.
+- **Support Tickets:** Stores Helpdesk ticket information, assignments, status updates, and remarks.
 
-Hibernate ORM provides the JPA implementation, while Spring Data JPA simplifies database access and repository operations.
+Spring Data JPA and Hibernate are used for database operations and object-relational mapping.
 
 ---
 
@@ -206,8 +172,9 @@ Make sure the following are installed:
 
 - Java 17 or later
 - MySQL Server
-- IntelliJ IDEA (recommended)
+- IntelliJ IDEA or VS Code
 - Git
+- Maven
 
 ### 1. Clone the Repository
 
@@ -217,9 +184,9 @@ git clone https://github.com/sathviksuhas7/WebDisplay.git
 
 ### 2. Open the Project
 
-Open the cloned project in IntelliJ IDEA.
+Open the cloned project in your preferred Java IDE.
 
-Allow Maven to load the dependencies defined in `pom.xml`.
+Allow Maven to download and configure the dependencies defined in `pom.xml`.
 
 ### 3. Create the Database
 
@@ -229,7 +196,9 @@ Open MySQL and execute:
 CREATE DATABASE webdisplay_db;
 ```
 
-Create the required tables and columns according to the application's entity mappings. The application uses `spring.jpa.hibernate.ddl-auto=none`, so Hibernate does not automatically create the database tables.
+Create the required tables and columns according to the application's entity mappings.
+
+Check the database configuration before running the application.
 
 ### 4. Configure Database Credentials
 
@@ -239,7 +208,7 @@ Open:
 src/main/resources/application.properties
 ```
 
-Configure the following properties:
+Configure the database connection:
 
 ```properties
 spring.datasource.url=${DB_URL}
@@ -247,7 +216,7 @@ spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 ```
 
-Set the following environment variables in your IDE or execution environment:
+Set the environment variables in your IDE or execution environment:
 
 ```text
 DB_URL=jdbc:mysql://localhost:3306/webdisplay_db
@@ -255,11 +224,11 @@ DB_USERNAME=your_mysql_username
 DB_PASSWORD=your_mysql_password
 ```
 
-Do not commit actual database credentials to the repository.
+Do not commit actual database credentials to GitHub.
 
 ### 5. Run the Application
 
-Run the Spring Boot main class:
+Run the Spring Boot main application class:
 
 ```text
 WebdisplayApplication.java
@@ -283,7 +252,7 @@ http://localhost:1111
 
 ## Future Enhancements
 
-The following features are planned for subsequent development:
+The following features are planned for further development:
 
 - File and document upload functionality.
 - Uploaded document preview.
@@ -293,11 +262,19 @@ The following features are planned for subsequent development:
 
 ## Project Status
 
-**Core banking management functionality implemented.**
+**Core banking and Helpdesk functionality implemented.**
 
-The application supports user authentication, session management, account operations, transaction processing, and account information management.
+The application currently includes:
 
-Additional functionality is planned as part of ongoing development.
+- Multi-role access for Admin, Employee, Customer, and Helpdesk.
+- Spring Security authentication and authorization.
+- CSRF protection and session-based authentication.
+- Banking operations including deposits, withdrawals, and fund transfers.
+- Customer lookup and transaction investigation.
+- Helpdesk support-ticket assignment, status updates, and remarks history.
+- MySQL database integration and REST API testing.
+
+Further improvements and additional functionality are planned.
 
 ---
 
@@ -305,4 +282,4 @@ Additional functionality is planned as part of ongoing development.
 
 **O Sathvik Suhas**
 
-Java | Spring Boot | MySQL | Backend Development
+Java | Spring Boot | Spring Security | MySQL | Backend Development
