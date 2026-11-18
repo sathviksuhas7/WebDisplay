@@ -13,6 +13,7 @@ public class StaffCreateRequest {
     private String department;
     private String designation;
     private String phone;
+    private String employeeType;
 
     public String getUsername() {
         return username;
@@ -76,5 +77,13 @@ public class StaffCreateRequest {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getEmployeeType() {
+        return employeeType;
+    }
+
+    public void setEmployeeType(String employeeType) {
+        this.employeeType = employeeType;
     }
 }

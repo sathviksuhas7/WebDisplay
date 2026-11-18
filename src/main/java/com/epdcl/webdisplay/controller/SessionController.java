@@ -1,4 +1,8 @@
+
 package com.epdcl.webdisplay.controller;
+
+import com.epdcl.webdisplay.audit.AuditService;
+import com.epdcl.webdisplay.entity.User;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -12,15 +16,25 @@ import java.util.Map;
 @RestController
 public class SessionController {
 
+    private final AuditService auditService;
+
+    public SessionController(AuditService auditService) {
+        this.auditService = auditService;
+    }
+
     @PostMapping("/api/session/heartbeat")
     public ResponseEntity<Map<String, String>> checkSession(
             HttpSession session) {
 
-        if (session.getAttribute("loggedInUser") == null) {
+        Object loggedInUser = session.getAttribute("loggedInUser");
+
+        if (!(loggedInUser instanceof User user)) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "SESSION_EXPIRED"));
         }
+
+        auditService.touchCurrentSession(user, session);
 
         return ResponseEntity.ok(
                 Map.of("message", "SESSION_ACTIVE"));

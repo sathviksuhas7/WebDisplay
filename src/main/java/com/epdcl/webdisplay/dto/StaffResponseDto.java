@@ -15,6 +15,7 @@ public class StaffResponseDto {
     private String department;
     private String designation;
     private String phone;
+    private String employeeType;
 
     public StaffResponseDto(Employee employee) {
 
@@ -31,6 +32,7 @@ public class StaffResponseDto {
         this.department = employee.getDepartment();
         this.designation = employee.getDesignation();
         this.phone = employee.getPhone();
+        this.employeeType = employee.getEmployeeType();
     }
 
     public Long getEmployeeId() {
@@ -67,5 +69,9 @@ public class StaffResponseDto {
 
     public String getPhone() {
         return phone;
+    }
+
+    public String getEmployeeType() {
+        return employeeType;
     }
 }

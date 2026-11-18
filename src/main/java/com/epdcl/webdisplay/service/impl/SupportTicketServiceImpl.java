@@ -1,22 +1,32 @@
 package com.epdcl.webdisplay.service.impl;
 
+
+import com.epdcl.webdisplay.audit.annotation.Audited;
+
 import com.epdcl.webdisplay.dto.SupportTicketDto;
 import com.epdcl.webdisplay.dto.TicketRemarkDto;
 import com.epdcl.webdisplay.dto.HelpdeskEmployeeDto;
+import com.epdcl.webdisplay.dto.TicketConversationMessageDto;
+
 import com.epdcl.webdisplay.entity.Customer;
 import com.epdcl.webdisplay.entity.Employee;
 import com.epdcl.webdisplay.entity.Role;
 import com.epdcl.webdisplay.entity.SupportTicket;
 import com.epdcl.webdisplay.entity.TicketRemark;
+import com.epdcl.webdisplay.entity.TicketConversationMessage;
+
 import com.epdcl.webdisplay.exception.AccountException;
+
 import com.epdcl.webdisplay.repo.CustomerRepository;
 import com.epdcl.webdisplay.repo.EmployeeRepository;
 import com.epdcl.webdisplay.repo.SupportTicketRepository;
 import com.epdcl.webdisplay.repo.TicketRemarkRepository;
+import com.epdcl.webdisplay.repo.TicketConversationMessageRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,26 +36,61 @@ import java.util.stream.Collectors;
 public class SupportTicketServiceImpl implements SupportTicketService {
 
     private static final String MANAGER = "HELPDESK_MANAGER";
-    private static final String EMPLOYEE = "HELPDESK_EMPLOYEE";
 
     private final TicketRemarkRepository remarkRepository;
     private final SupportTicketRepository ticketRepository;
     private final CustomerRepository customerRepository;
     private final EmployeeRepository employeeRepository;
+    private final TicketConversationMessageRepository conversationRepository;
 
     public SupportTicketServiceImpl(
             SupportTicketRepository ticketRepository,
             CustomerRepository customerRepository,
             EmployeeRepository employeeRepository,
-            TicketRemarkRepository remarkRepository) {
+            TicketRemarkRepository remarkRepository,
+            TicketConversationMessageRepository conversationRepository) {
 
         this.ticketRepository = ticketRepository;
         this.customerRepository = customerRepository;
         this.employeeRepository = employeeRepository;
         this.remarkRepository = remarkRepository;
+        this.conversationRepository = conversationRepository;
     }
 
-    // Convert ticket entity to DTO
+    // ---------------------------------------------------------
+    // SLA
+    // ---------------------------------------------------------
+
+    private LocalDateTime calculateSlaDeadline(
+            String priority, LocalDateTime createdAt) {
+
+        return switch (priority.toUpperCase()) {
+            case "URGENT" -> createdAt.plusHours(1);
+            case "HIGH" -> createdAt.plusHours(4);
+            //case "MEDIUM" -> createdAt.plusHours(24);
+            case "LOW" -> createdAt.plusHours(48);
+            default -> createdAt.plusHours(24);
+        };
+    }
+
+    private boolean isTicketOverdue(SupportTicket ticket) {
+
+        String status = ticket.getStatus();
+
+        if (status == null
+                || "CLOSED".equalsIgnoreCase(status)
+                || "RESOLVED".equalsIgnoreCase(status)) {
+            return false;
+        }
+
+        return ticket.getSlaDeadline() != null
+                && LocalDateTime.now().isAfter(ticket.getSlaDeadline());
+    }
+
+    // ---------------------------------------------------------
+    // DTO MAPPING
+    // ---------------------------------------------------------
+
     private SupportTicketDto mapToDto(SupportTicket ticket) {
 
         SupportTicketDto dto = new SupportTicketDto();
@@ -60,6 +105,14 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         dto.setCustomerRemarks(ticket.getCustomerRemarks());
         dto.setCreatedAt(ticket.getCreatedAt());
         dto.setUpdatedAt(ticket.getUpdatedAt());
+        dto.setSlaDeadline(ticket.getSlaDeadline());
+        dto.setOverdue(isTicketOverdue(ticket));
+        dto.setEscalated(ticket.isEscalated());
+        dto.setEscalatedAt(ticket.getEscalatedAt());
+        dto.setResolutionRemarks(ticket.getResolutionRemarks());
+        dto.setConversationEnded(ticket.isConversationEnded());
+        dto.setConversationEndedAt(ticket.getConversationEndedAt());
+        dto.setConversationEndedBy(ticket.getConversationEndedBy());
 
         if (ticket.getAssignedEmployee() != null) {
             dto.setAssignedEmployeeId(
@@ -69,22 +122,9 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                     ticket.getAssignedEmployee().getEmployeeName());
         }
 
-        // Display latest remark with its author's name
-        remarkRepository
-                .findFirstByTicketTicketIdOrderByCreatedAtDescRemarkIdDesc(
-                        ticket.getTicketId())
-                .ifPresentOrElse(
-                        remark -> dto.setResolutionRemarks(
-                                remark.getEmployee().getEmployeeName()
-                                        + ": " + remark.getRemarks()),
-                        () -> dto.setResolutionRemarks(
-                                ticket.getResolutionRemarks())
-                );
-
         return dto;
     }
 
-    // Customer-facing DTO: hide internal remarks and assignment details
     private SupportTicketDto mapToCustomerDto(SupportTicket ticket) {
 
         SupportTicketDto dto = mapToDto(ticket);
@@ -92,12 +132,119 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         dto.setResolutionRemarks(null);
         dto.setAssignedEmployeeId(null);
         dto.setAssignedEmployeeName(null);
-        dto.setCustomerRemarks(ticket.getCustomerRemarks());
 
         return dto;
     }
 
-    // Create customer ticket
+    // ---------------------------------------------------------
+    // CONVERSATION MESSAGES
+    // ---------------------------------------------------------
+
+    private TicketConversationMessageDto saveConversationMessage(
+            SupportTicket ticket,
+            String senderType,
+            String senderName,
+            String message) {
+
+        TicketConversationMessage item =
+                new TicketConversationMessage();
+
+        item.setTicket(ticket);
+        item.setSenderType(senderType);
+        item.setSenderName(senderName);
+        item.setMessage(message);
+
+        TicketConversationMessage saved =
+                conversationRepository.save(item);
+
+        return new TicketConversationMessageDto(
+                saved.getMessageId(),
+                ticket.getTicketId(),
+                saved.getSenderType(),
+                saved.getSenderName(),
+                saved.getMessage(),
+                saved.getCreatedAt()
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TicketConversationMessageDto> getCustomerConversation(
+            Long customerId,
+            Long ticketId) {
+
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() ->
+                        new AccountException("Ticket not found"));
+
+        if (!ticket.getCustomer().getCustomerId().equals(customerId)) {
+            throw new AccountException(
+                    "You are not allowed to view this conversation");
+        }
+
+        return conversationRepository
+                .findByTicketTicketIdOrderByCreatedAtAscMessageIdAsc(ticketId)
+                .stream()
+                .map(message -> new TicketConversationMessageDto(
+                        message.getMessageId(),
+                        ticketId,
+                        message.getSenderType(),
+                        message.getSenderName(),
+                        message.getMessage(),
+                        message.getCreatedAt()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public TicketConversationMessageDto addCustomerReply(
+            Long customerId,
+            Long ticketId,
+            String message) {
+
+        if (message == null || message.isBlank()) {
+            throw new AccountException("Reply cannot be empty");
+        }
+
+        if (message.trim().length() > 4000) {
+            throw new AccountException(
+                    "Reply cannot exceed 4000 characters");
+        }
+
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() ->
+                        new AccountException("Ticket not found"));
+
+        if (!ticket.getCustomer().getCustomerId().equals(customerId)) {
+            throw new AccountException(
+                    "You are not allowed to reply to this ticket");
+        }
+
+        // Prevent customer replies after the conversation has ended.
+        if (ticket.isConversationEnded()) {
+            throw new AccountException(
+                    "This conversation has ended. Please raise a new support ticket.");
+        }
+
+        if ("CLOSED".equalsIgnoreCase(ticket.getStatus())) {
+            throw new AccountException(
+                    "This ticket is closed. You cannot reply.");
+        }
+
+        return saveConversationMessage(
+                ticket,
+                "CUSTOMER",
+                ticket.getCustomer().getCustomerName(),
+                message.trim()
+        );
+    }
+
+
+    // ---------------------------------------------------------
+    // CUSTOMER TICKETS
+    // ---------------------------------------------------------
+
     @Override
     @Transactional
     public SupportTicketDto createTicket(
@@ -124,6 +271,13 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         ticket.setSubject(dto.getSubject().trim());
         ticket.setDescription(dto.getDescription().trim());
 
+        if (dto.getCustomerRemarks() != null
+                && !dto.getCustomerRemarks().isBlank()) {
+
+            ticket.setCustomerRemarks(
+                    dto.getCustomerRemarks().trim());
+        }
+
         String priority = dto.getPriority() == null
                 ? "MEDIUM"
                 : dto.getPriority().trim().toUpperCase();
@@ -136,10 +290,25 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         ticket.setPriority(priority);
         ticket.setStatus("OPEN");
 
-        return mapToCustomerDto(ticketRepository.save(ticket));
+        LocalDateTime createdAt = LocalDateTime.now();
+
+        ticket.setCreatedAt(createdAt);
+        ticket.setSlaDeadline(
+                calculateSlaDeadline(priority, createdAt));
+
+        SupportTicket savedTicket = ticketRepository.save(ticket);
+
+        // Save the original complaint as the first conversation message.
+        saveConversationMessage(
+                savedTicket,
+                "CUSTOMER",
+                customer.getCustomerName(),
+                savedTicket.getDescription()
+        );
+
+        return mapToCustomerDto(savedTicket);
     }
 
-    // Customer views own tickets
     @Override
     @Transactional(readOnly = true)
     public List<SupportTicketDto> getCustomerTickets(Long customerId) {
@@ -150,7 +319,10 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .collect(Collectors.toList());
     }
 
-    // Get Helpdesk employee by user ID
+    // ---------------------------------------------------------
+    // EMPLOYEE VALIDATION
+    // ---------------------------------------------------------
+
     private Employee getHelpdeskEmployee(Long userId) {
 
         Employee employee = employeeRepository.findByUserId(userId)
@@ -167,7 +339,6 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         return employee;
     }
 
-    // Verify Manager designation
     private Employee getHelpdeskManager(Long userId) {
 
         Employee employee = getHelpdeskEmployee(userId);
@@ -180,7 +351,6 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         return employee;
     }
 
-    // Verify regular Helpdesk employee
     private Employee getRegularHelpdeskEmployee(Long userId) {
 
         Employee employee = getHelpdeskEmployee(userId);
@@ -193,7 +363,6 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         return employee;
     }
 
-    // Verify ticket assignment
     private void verifyTicketAssignment(
             SupportTicket ticket, Employee employee) {
 
@@ -205,11 +374,17 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         }
     }
 
-    // Save employee and manager messages in shared ticket history
+    // ---------------------------------------------------------
+    // INTERNAL INVESTIGATION HISTORY
+    // ---------------------------------------------------------
+
     private void saveTicketRemark(
-            SupportTicket ticket, Employee employee, String message) {
+            SupportTicket ticket,
+            Employee employee,
+            String message) {
 
         TicketRemark remark = new TicketRemark();
+
         remark.setTicket(ticket);
         remark.setEmployee(employee);
         remark.setRemarks(message);
@@ -217,7 +392,10 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         remarkRepository.save(remark);
     }
 
-    // Manager: View all tickets
+    // ---------------------------------------------------------
+    // MANAGER: VIEW ALL TICKETS
+    // ---------------------------------------------------------
+
     @Override
     @Transactional(readOnly = true)
     public List<SupportTicketDto> getAllTickets(Long userId) {
@@ -230,12 +408,17 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .collect(Collectors.toList());
     }
 
-    // Employee: Update assigned ticket progress
+    // ---------------------------------------------------------
+    // EMPLOYEE: UPDATE TICKET PROGRESS
+    // ---------------------------------------------------------
+
     @Override
     @Transactional
     public SupportTicketDto updateTicket(
-            Long ticketId, Long userId,
-            String status, String remarks) {
+            Long ticketId,
+            Long userId,
+            String status,
+            String remarks) {
 
         Employee employee = getRegularHelpdeskEmployee(userId);
 
@@ -265,20 +448,29 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         if (remarks != null && !remarks.isBlank()) {
             String progressNote = remarks.trim();
+
             ticket.setResolutionRemarks(progressNote);
 
             saveTicketRemark(
-                    ticket, employee, "Progress update: " + progressNote);
+                    ticket,
+                    employee,
+                    "Progress update: " + progressNote
+            );
         }
 
         return mapToDto(ticketRepository.save(ticket));
     }
 
-    // Employee: Send an intentional customer-facing update
+    // ---------------------------------------------------------
+    // EMPLOYEE: SEND CUSTOMER-VISIBLE UPDATE
+    // ---------------------------------------------------------
+
     @Override
     @Transactional
     public SupportTicketDto sendCustomerUpdate(
-            Long ticketId, Long userId, String message) {
+            Long ticketId,
+            Long userId,
+            String message) {
 
         Employee employee = getRegularHelpdeskEmployee(userId);
 
@@ -290,24 +482,49 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         if (message == null || message.isBlank()) {
             throw new AccountException(
-                    "Customer update message cannot be empty");
+                    "Please enter a customer update");
+        }
+
+        if (ticket.isConversationEnded()) {
+            throw new AccountException("This conversation has ended. No further replies are allowed.");
+        }
+
+        if (message.trim().length() > 4000) {
+            throw new AccountException(
+                    "Customer update cannot exceed 4000 characters");
         }
 
         if ("CLOSED".equalsIgnoreCase(ticket.getStatus())) {
             throw new AccountException(
-                    "Cannot send an update for a closed ticket");
+                    "Cannot update a closed ticket");
         }
 
-        ticket.setCustomerRemarks(message.trim());
+        // Save as a customer-visible conversation message.
+        // Do not append this to customerRemarks or TicketRemark.
+        saveConversationMessage(
+                ticket,
+                "HELPDESK",
+                employee.getEmployeeName(),
+                message.trim()
+        );
 
-        return mapToDto(ticketRepository.save(ticket));
+        return mapToDto(ticket);
     }
 
-    // Manager: Assign or reassign tickets
+    // ---------------------------------------------------------
+    // MANAGER: ASSIGN OR REASSIGN TICKETS
+    // ---------------------------------------------------------
+
     @Override
     @Transactional
+    @Audited(
+            action = "HELPDESK_TICKET_ASSIGNED_OR_REASSIGNED",
+            details = "Helpdesk Manager assigned or reassigned a support ticket"
+    )
     public SupportTicketDto assignTicket(
-            Long ticketId, Long currentUserId, Long employeeId) {
+            Long ticketId,
+            Long currentUserId,
+            Long employeeId) {
 
         Employee manager = getHelpdeskManager(currentUserId);
 
@@ -334,7 +551,6 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         Employee previousEmployee = ticket.getAssignedEmployee();
 
-        // Prevent unnecessary reassignment to the same employee
         if (previousEmployee != null
                 && previousEmployee.getEmployeeId()
                 .equals(newEmployee.getEmployeeId())) {
@@ -342,19 +558,14 @@ public class SupportTicketServiceImpl implements SupportTicketService {
             return mapToDto(ticket);
         }
 
-        // Change current assignment
         ticket.setAssignedEmployee(newEmployee);
 
-        // Record assignment/reassignment in permanent history
         String assignmentMessage;
 
         if (previousEmployee == null) {
-
             assignmentMessage = "Ticket assigned to "
                     + newEmployee.getEmployeeName();
-
         } else {
-
             assignmentMessage = "Ticket reassigned from "
                     + previousEmployee.getEmployeeName()
                     + " to "
@@ -370,14 +581,20 @@ public class SupportTicketServiceImpl implements SupportTicketService {
             ticket.setStatus("IN_PROGRESS");
         }
 
+        // SLA deadline is not reset during reassignment.
         return mapToDto(ticketRepository.save(ticket));
     }
 
-    // Employee: Submit completed work for Manager review
+    // ---------------------------------------------------------
+    // EMPLOYEE: SUBMIT FOR MANAGER REVIEW
+    // ---------------------------------------------------------
+
     @Override
     @Transactional
     public SupportTicketDto submitForReview(
-            Long ticketId, Long userId, String remarks) {
+            Long ticketId,
+            Long userId,
+            String remarks) {
 
         Employee employee = getRegularHelpdeskEmployee(userId);
 
@@ -392,26 +609,42 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                     "Only IN_PROGRESS tickets can be submitted for review");
         }
 
-        if (remarks != null && !remarks.isBlank()) {
-            String reviewNote = remarks.trim();
-            ticket.setResolutionRemarks(reviewNote);
-
-            saveTicketRemark(
-                    ticket, employee,
-                    "Submitted for manager review: " + reviewNote);
+        if (remarks == null || remarks.trim().length() < 20) {
+            throw new AccountException(
+                    "Provide a detailed resolution summary of at least 20 characters");
         }
+
+        String reviewNote = remarks.trim();
+
+        ticket.setResolutionRemarks(reviewNote);
+
+        saveTicketRemark(
+                ticket,
+                employee,
+                "Submitted for manager review: " + reviewNote
+        );
 
         ticket.setStatus("PENDING_REVIEW");
 
         return mapToDto(ticketRepository.save(ticket));
     }
 
-    // Manager: Close ticket or return it to employee
+    // ---------------------------------------------------------
+    // MANAGER: REVIEW TICKET
+    // ---------------------------------------------------------
+
     @Override
     @Transactional
+    @Audited(
+            action = "HELPDESK_TICKET_REVIEWED",
+            details = "Helpdesk Manager closed or returned a support ticket"
+    )
     public SupportTicketDto reviewTicket(
-            Long ticketId, Long managerUserId,
-            String decision, String remarks) {
+            Long ticketId,
+            Long managerUserId,
+            String decision,
+            String remarks,
+            Long newEmployeeId) {
 
         Employee manager = getHelpdeskManager(managerUserId);
 
@@ -432,15 +665,21 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         if ("CLOSE".equals(action)) {
 
+            if (ticket.getResolutionRemarks() == null
+                    || ticket.getResolutionRemarks().trim().length() < 20) {
+
+                throw new AccountException(
+                        "Cannot close ticket without a detailed employee resolution summary");
+            }
+
             ticket.setStatus("CLOSED");
 
             if (remarks != null && !remarks.isBlank()) {
-                String managerNote = remarks.trim();
-                ticket.setResolutionRemarks(managerNote);
-
                 saveTicketRemark(
-                        ticket, manager,
-                        "Manager closed ticket: " + managerNote);
+                        ticket,
+                        manager,
+                        "Manager closed ticket: " + remarks.trim()
+                );
             }
 
         } else if ("RETURN".equals(action)) {
@@ -450,17 +689,51 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                         "Please provide a reason before returning the ticket");
             }
 
+            if (newEmployeeId == null) {
+                throw new AccountException(
+                        "Please select an employee to assign the returned ticket");
+            }
+
+            Employee newEmployee = employeeRepository.findById(newEmployeeId)
+                    .orElseThrow(() ->
+                            new AccountException("Employee not found"));
+
+            if (newEmployee.getUser() == null
+                    || newEmployee.getUser().getRole() != Role.HELPDESK
+                    || MANAGER.equalsIgnoreCase(newEmployee.getDesignation())) {
+
+                throw new AccountException(
+                        "Select a valid Helpdesk employee");
+            }
+
+            Employee previousEmployee = ticket.getAssignedEmployee();
+
+            if (previousEmployee == null
+                    || !previousEmployee.getEmployeeId()
+                    .equals(newEmployee.getEmployeeId())) {
+
+                ticket.setAssignedEmployee(newEmployee);
+
+                String assignmentMessage = previousEmployee == null
+                        ? "Returned ticket assigned to "
+                        + newEmployee.getEmployeeName()
+                        : "Returned ticket reassigned from "
+                        + previousEmployee.getEmployeeName()
+                        + " to "
+                        + newEmployee.getEmployeeName();
+
+                saveTicketRemark(ticket, manager, assignmentMessage);
+            }
+
             ticket.setStatus("IN_PROGRESS");
 
-            String managerNote = remarks.trim();
-            ticket.setResolutionRemarks(managerNote);
-
             saveTicketRemark(
-                    ticket, manager,
-                    "Manager returned ticket: " + managerNote);
+                    ticket,
+                    manager,
+                    "Manager returned ticket: " + remarks.trim()
+            );
 
         } else {
-
             throw new AccountException(
                     "Invalid decision. Use CLOSE or RETURN");
         }
@@ -468,7 +741,10 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         return mapToDto(ticketRepository.save(ticket));
     }
 
-    // Employee: View assigned tickets
+    // ---------------------------------------------------------
+    // EMPLOYEE: VIEW ASSIGNED TICKETS
+    // ---------------------------------------------------------
+
     @Override
     @Transactional(readOnly = true)
     public List<SupportTicketDto> getMyAssignedTickets(Long userId) {
@@ -482,11 +758,16 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .collect(Collectors.toList());
     }
 
-    // Add investigation remark
+    // ---------------------------------------------------------
+    // INTERNAL INVESTIGATION REMARKS
+    // ---------------------------------------------------------
+
     @Override
     @Transactional
     public TicketRemarkDto addRemark(
-            Long ticketId, Long userId, String remarks) {
+            Long ticketId,
+            Long userId,
+            String remarks) {
 
         if (remarks == null || remarks.isBlank()) {
             throw new AccountException("Remarks cannot be empty");
@@ -524,11 +805,11 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         );
     }
 
-    // View complete investigation history
     @Override
     @Transactional(readOnly = true)
     public List<TicketRemarkDto> getTicketRemarks(
-            Long ticketId, Long userId) {
+            Long ticketId,
+            Long userId) {
 
         Employee employee = getHelpdeskEmployee(userId);
 
@@ -536,8 +817,6 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .orElseThrow(() ->
                         new AccountException("Ticket not found"));
 
-        // Manager can view all ticket histories.
-        // Employee can view the history of their currently assigned ticket.
         if (!MANAGER.equalsIgnoreCase(employee.getDesignation())) {
             verifyTicketAssignment(ticket, employee);
         }
@@ -555,7 +834,10 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .collect(Collectors.toList());
     }
 
-    // Statistics limited to the logged-in user's permitted tickets
+    // ---------------------------------------------------------
+    // STATISTICS
+    // ---------------------------------------------------------
+
     @Override
     @Transactional(readOnly = true)
     public Map<String, Long> getTicketStatistics(Long userId) {
@@ -579,22 +861,38 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         statistics.put("pendingReview", countStatus(tickets, "PENDING_REVIEW"));
         statistics.put("resolved", countStatus(tickets, "RESOLVED"));
         statistics.put("closed", countStatus(tickets, "CLOSED"));
+        statistics.put("overdue",
+                tickets.stream().filter(this::isTicketOverdue).count());
+        statistics.put(
+                "escalated",
+                tickets.stream()
+                        .filter(SupportTicket::isEscalated)
+                        .count()
+        );
 
         return statistics;
     }
 
-    private long countStatus(List<SupportTicket> tickets, String status) {
+    private long countStatus(
+            List<SupportTicket> tickets,
+            String status) {
 
         return tickets.stream()
-                .filter(ticket -> status.equalsIgnoreCase(ticket.getStatus()))
+                .filter(ticket ->
+                        status.equalsIgnoreCase(ticket.getStatus()))
                 .count();
     }
 
-    // Filter tickets within the user's permitted scope
+    // ---------------------------------------------------------
+    // FILTER TICKETS
+    // ---------------------------------------------------------
+
     @Override
     @Transactional(readOnly = true)
     public List<SupportTicketDto> filterTickets(
-            Long userId, String status, String priority) {
+            Long userId,
+            String status,
+            String priority) {
 
         Employee employee = getHelpdeskEmployee(userId);
 
@@ -618,7 +916,10 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .collect(Collectors.toList());
     }
 
-    // Manager: Get assignable Helpdesk employees
+    // ---------------------------------------------------------
+    // MANAGER: GET ASSIGNABLE EMPLOYEES
+    // ---------------------------------------------------------
+
     @Override
     @Transactional(readOnly = true)
     public List<HelpdeskEmployeeDto> getHelpdeskEmployees(Long userId) {
@@ -639,5 +940,41 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .collect(Collectors.toList());
     }
 
+    // Employee: End customer-facing conversation without closing the ticket
+    @Override
+    @Transactional
+    public SupportTicketDto endConversation(Long ticketId, Long userId) {
+
+        Employee employee = getRegularHelpdeskEmployee(userId);
+
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() ->
+                        new AccountException("Ticket not found"));
+
+        verifyTicketAssignment(ticket, employee);
+
+        if (ticket.isConversationEnded()) {
+            throw new AccountException("This conversation has already ended");
+        }
+
+        ticket.setConversationEnded(true);
+        ticket.setConversationEndedAt(LocalDateTime.now());
+        ticket.setConversationEndedBy(employee.getEmployeeName());
+
+        String closingMessage =
+                "This conversation has been ended by " +
+                        employee.getEmployeeName() +
+                        ". Thank you for contacting WebDisplay Support. " +
+                        "If you need further assistance, please raise a new support ticket.";
+
+        saveConversationMessage(
+                ticket,
+                "HELPDESK",
+                employee.getEmployeeName(),
+                closingMessage
+        );
+
+        return mapToDto(ticketRepository.save(ticket));
+    }
 
 }

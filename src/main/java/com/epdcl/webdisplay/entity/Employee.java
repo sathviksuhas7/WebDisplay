@@ -7,6 +7,9 @@ import jakarta.persistence.*;
 @Table(name = "employees")
 public class Employee {
 
+    @Column(name = "employee_type", nullable = false, length = 20)
+    private String employeeType = "PRIVATE";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long employeeId;
@@ -66,5 +69,13 @@ public class Employee {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getEmployeeType() {
+        return employeeType;
+    }
+
+    public void setEmployeeType(String employeeType) {
+        this.employeeType = employeeType;
     }
 }

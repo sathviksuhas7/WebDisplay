@@ -10,6 +10,7 @@ public class StaffUpdateRequest {
     private String designation;
     private String phone;
     private Role role;
+    private String employeeType;
 
     public String getEmployeeName() {
         return employeeName;
@@ -49,5 +50,13 @@ public class StaffUpdateRequest {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getEmployeeType() {
+        return employeeType;
+    }
+
+    public void setEmployeeType(String employeeType) {
+        this.employeeType = employeeType;
     }
 }

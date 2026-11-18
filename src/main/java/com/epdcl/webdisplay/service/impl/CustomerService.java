@@ -1,12 +1,11 @@
+
 package com.epdcl.webdisplay.service.impl;
 
 import com.epdcl.webdisplay.entity.Customer;
-import java.time.LocalDate;
-
 import com.epdcl.webdisplay.dto.HelpdeskCustomerDto;
+
+import java.time.LocalDate;
 import java.util.List;
-
-
 
 public interface CustomerService {
 
@@ -22,7 +21,10 @@ public interface CustomerService {
 
     Customer getCustomerByUserId(Long userId);
 
-    List<HelpdeskCustomerDto> searchCustomers(String name, String phone);
+    List<HelpdeskCustomerDto> searchCustomers(
+            String name,
+            String phone
+    );
 
     HelpdeskCustomerDto getHelpdeskCustomerById(Long customerId);
 }

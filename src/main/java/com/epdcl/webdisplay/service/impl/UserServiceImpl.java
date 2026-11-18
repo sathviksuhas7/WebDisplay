@@ -82,6 +82,9 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(password));
         user.setRole(Role.CUSTOMER);
 
+        // Force customer to change initial password
+        user.setMustChangePassword(true);
+
         return userRepository.save(user);
     }
 
@@ -95,9 +98,12 @@ public class UserServiceImpl implements UserService {
 
         validateUserDetails(username, password);
 
-        if (role != Role.EMPLOYEE && role != Role.HELPDESK) {
+        if (role != Role.EMPLOYEE
+                && role != Role.HELPDESK
+                && role != Role.BANK_MANAGER) {
+
             throw new RuntimeException(
-                    "Only EMPLOYEE and HELPDESK roles can be created by Admin."
+                    "Only EMPLOYEE, HELPDESK and BANK_MANAGER roles can be created by Admin."
             );
         }
 
@@ -136,5 +142,35 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException(
                     "Password must contain at least 8 characters");
         }
+    }
+
+    @Override
+    public void updateCustomerEmail(Long userId, String newEmail) {
+
+        if (userId == null || newEmail == null || newEmail.isBlank()) {
+            throw new IllegalArgumentException("Valid email is required");
+        }
+
+        String normalizedEmail = newEmail.trim().toLowerCase();
+
+        if (!normalizedEmail.matches(
+                "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            throw new IllegalArgumentException("Enter a valid email address");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (normalizedEmail.equalsIgnoreCase(user.getEmail())) {
+            throw new IllegalArgumentException(
+                    "New email must be different from the current email");
+        }
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        user.setEmail(normalizedEmail);
+        userRepository.save(user);
     }
 }

@@ -5,6 +5,7 @@
 <head>
     <title>Admin Dashboard</title>
     <meta name="csrf-token" content="${sessionScope.csrfToken}">
+
     <style>
         * {
             box-sizing: border-box;
@@ -141,6 +142,34 @@
             margin-top: 15px;
         }
 
+        .audit-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .audit-filters input,
+        .audit-filters select {
+            min-width: 0;
+        }
+
+        #auditTableBody td {
+            white-space: normal;
+            vertical-align: top;
+        }
+
+        #auditTableBody td:nth-child(5) {
+            min-width: 220px;
+            max-width: 350px;
+            overflow-wrap: anywhere;
+        }
+
+        #auditPageInfo {
+            display: inline-block;
+            font-size: 14px;
+        }
+
         @media(max-width: 650px) {
             .form-grid,
             .filter-grid {
@@ -158,10 +187,15 @@
 
 <header>
     <h2>Admin Dashboard</h2>
+
     <form action="<%= request.getContextPath() %>/logout"
           method="post"
           style="display:inline;">
-            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
+
+        <input type="hidden"
+               name="csrfToken"
+               value="${sessionScope.csrfToken}">
+
         <button type="submit"
                 style="background:#dc2626; color:white; padding:10px 18px;
                        border:0; border-radius:7px; cursor:pointer;">
@@ -181,31 +215,49 @@
 
             <div class="form-grid">
 
-                <input type="text" id="employeeName"
-                       placeholder="Employee Name" required>
+                <input type="text"
+                       id="employeeName"
+                       placeholder="Employee Name"
+                       required>
 
-                <input type="text" id="username"
-                       placeholder="Username" required>
+                <input type="text"
+                       id="username"
+                       placeholder="Username"
+                       required>
 
-                <input type="email" id="email"
+                <input type="email"
+                       id="email"
                        placeholder="Email">
 
-                <input type="password" id="password"
-                       placeholder="Password" required>
+                <input type="password"
+                       id="password"
+                       placeholder="Password"
+                       required>
 
                 <select id="role" required>
                     <option value="">Select Staff Role</option>
                     <option value="EMPLOYEE">Employee</option>
                     <option value="HELPDESK">Helpdesk</option>
+                    <option value="BANK_MANAGER">Bank Manager</option>
                 </select>
 
-                <input type="text" id="department"
+                <!-- NEW: EMPLOYEE TYPE -->
+                <select id="employeeType" required>
+                    <option value="">Select Employee Type</option>
+                    <option value="PRIVATE">Private Employee</option>
+                    <option value="DEPARTMENT">Department Employee</option>
+                </select>
+
+                <input type="text"
+                       id="department"
                        placeholder="Department">
 
-                <input type="text" id="designation"
+                <input type="text"
+                       id="designation"
                        placeholder="Designation">
 
-                <input type="text" id="phone"
+                <input type="text"
+                       id="phone"
                        placeholder="Phone Number">
 
             </div>
@@ -237,6 +289,7 @@
                 <option value="">All Roles</option>
                 <option value="EMPLOYEE">Employee</option>
                 <option value="HELPDESK">Helpdesk</option>
+                <option value="BANK_MANAGER">Bank Manager</option>
 
             </select>
 
@@ -267,6 +320,7 @@
                         <th>Username</th>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Employee Type</th>
                         <th>Department</th>
                         <th>Designation</th>
                         <th>Phone</th>
@@ -283,6 +337,8 @@
         </div>
 
     </div>
+
+
 
 
     <!-- EDIT STAFF -->
@@ -316,6 +372,13 @@
                 <select id="editRole" required>
                     <option value="EMPLOYEE">Employee</option>
                     <option value="HELPDESK">Helpdesk</option>
+                    <option value="BANK_MANAGER">Bank Manager</option>
+                </select>
+
+                <!-- NEW: EDIT EMPLOYEE TYPE -->
+                <select id="editEmployeeType" required>
+                    <option value="PRIVATE">Private Employee</option>
+                    <option value="DEPARTMENT">Department Employee</option>
                 </select>
 
             </div>
@@ -331,6 +394,101 @@
             <div id="editMessage" class="message"></div>
 
         </form>
+
+    </div>
+
+    <!-- AUDIT HISTORY -->
+    <div class="card">
+
+        <h3>Audit History</h3>
+        <p>View and filter user login, logout and session activities.</p>
+
+        <div class="audit-filters">
+
+            <input type="text"
+                   id="auditUsername"
+                   placeholder="Search username">
+
+            <select id="auditRole">
+                <option value="">All Roles</option>
+                <option value="ADMIN">Admin</option>
+                <option value="EMPLOYEE">Employee</option>
+                <option value="CUSTOMER">Customer</option>
+                <option value="HELPDESK">Helpdesk</option>
+                <option value="BANK_MANAGER">Bank Manager</option>
+            </select>
+
+            <select id="auditAction">
+                <option value="">All Activities</option>
+                <option value="LOGIN">Login</option>
+                <option value="LOGOUT">Logout</option>
+                <option value="FAILED_LOGIN">Failed Login</option>
+                <option value="SESSION_REPLACED">Session Replaced</option>
+            </select>
+
+            <input type="datetime-local" id="auditFromDate"
+                   title="From date">
+
+            <input type="datetime-local" id="auditToDate"
+                   title="To date">
+
+        </div>
+
+        <button type="button" onclick="loadAuditLogs(0)">
+            Apply Filters
+        </button>
+
+        <button type="button" class="secondary"
+                onclick="clearAuditFilters()">
+            Clear Filters
+        </button>
+
+        <button type="button" class="secondary"
+                onclick="loadAuditLogs(currentAuditPage)">
+            Refresh
+        </button>
+
+        <div id="auditMessage" class="message"></div>
+
+        <div class="table-wrapper" id="auditTableContainer"
+             style="display:none;">
+
+            <table>
+                <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Activity</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+                </thead>
+
+                <tbody id="auditTableBody"></tbody>
+            </table>
+
+        </div>
+
+        <div id="auditPagination"
+             style="display:none; margin-top:15px;">
+
+            <button type="button" class="secondary"
+                    id="auditPrevious"
+                    onclick="loadAuditLogs(currentAuditPage - 1)">
+                Previous
+            </button>
+
+            <span id="auditPageInfo"
+                  style="margin:0 12px;"></span>
+
+            <button type="button" class="secondary"
+                    id="auditNext"
+                    onclick="loadAuditLogs(currentAuditPage + 1)">
+                Next
+            </button>
+
+        </div>
 
     </div>
 
@@ -420,6 +578,8 @@
                 password: document.getElementById("password").value,
 
                 role: document.getElementById("role").value,
+
+                employeeType: document.getElementById("employeeType").value,
 
                 department: document.getElementById("department").value.trim(),
 
@@ -572,6 +732,8 @@
 
                 "<td>" + escapeHtml(staff.role) + "</td>" +
 
+                "<td>" + escapeHtml(staff.employeeType || "PRIVATE") + "</td>" +
+
                 "<td>" + escapeHtml(staff.department) + "</td>" +
 
                 "<td>" + escapeHtml(staff.designation) + "</td>" +
@@ -614,6 +776,10 @@
         document.getElementById("editPhone").value = staff.phone || "";
 
         document.getElementById("editRole").value = staff.role;
+
+        // Load existing employee type; default old records to PRIVATE.
+        document.getElementById("editEmployeeType").value =
+            staff.employeeType || "PRIVATE";
 
 
         document.getElementById("editMessage").style.display = "none";
@@ -658,7 +824,9 @@
 
                 phone: document.getElementById("editPhone").value.trim(),
 
-                role: document.getElementById("editRole").value
+                role: document.getElementById("editRole").value,
+
+                employeeType: document.getElementById("editEmployeeType").value
 
             };
 
@@ -697,11 +865,250 @@
         });
 
 
-    // LOAD STAFF WHEN DASHBOARD OPENS
-    window.addEventListener("DOMContentLoaded", loadStaff);
+    // AUDIT HISTORY
+
+    let currentAuditPage = 0;
+
+    async function loadAuditLogs(page) {
+
+        const message = document.getElementById("auditMessage");
+        const tableContainer = document.getElementById("auditTableContainer");
+        const pagination = document.getElementById("auditPagination");
+
+        const username = document.getElementById("auditUsername").value.trim();
+        const role = document.getElementById("auditRole").value;
+        const action = document.getElementById("auditAction").value;
+        const fromDate = document.getElementById("auditFromDate").value;
+        const toDate = document.getElementById("auditToDate").value;
+
+        if (fromDate && toDate && fromDate > toDate) {
+            showMessage(
+                "auditMessage",
+                "From date cannot be later than To date.",
+                "error"
+            );
+            return;
+        }
+
+        const params = new URLSearchParams();
+
+        if (username) params.append("username", username);
+        if (role) params.append("role", role);
+        if (action) params.append("action", action);
+        if (fromDate) params.append("fromDate", fromDate);
+        if (toDate) params.append("toDate", toDate);
+
+        params.append("page", page);
+        params.append("size", 20);
+
+        try {
+
+            message.style.display = "none";
+
+            const result = await apiRequest(
+                API + "/audit-logs?" + params.toString()
+            );
+
+            currentAuditPage = result.number || 0;
+
+            const tbody = document.getElementById("auditTableBody");
+            tbody.innerHTML = "";
+
+            if (!result.content || result.content.length === 0) {
+
+                tableContainer.style.display = "none";
+                pagination.style.display = "none";
+
+                showMessage(
+                    "auditMessage",
+                    "No audit records found.",
+                    "error"
+                );
+
+                return;
+            }
+
+            result.content.forEach(function(log) {
+
+                const row = document.createElement("tr");
+
+                const dateTime = log.createdAt
+                    ? log.createdAt.replace("T", " ")
+                    : "-";
+
+                row.innerHTML =
+                    "<td>" + escapeHtml(dateTime) + "</td>" +
+                    "<td>" + escapeHtml(log.username) + "</td>" +
+                    "<td>" + escapeHtml(log.role || "-") + "</td>" +
+                    "<td>" + escapeHtml(log.action) + "</td>" +
+                    "<td>" + escapeHtml(log.details || "-") + "</td>" +
+                    "<td>" + escapeHtml(log.ipAddress || "-") + "</td>";
+
+                tbody.appendChild(row);
+            });
+
+            tableContainer.style.display = "block";
+            pagination.style.display = "block";
+
+            const totalPages = result.totalPages || 0;
+            const currentPage = result.number || 0;
+
+            document.getElementById("auditPageInfo").textContent =
+                "Page " + (totalPages === 0 ? 0 : currentPage + 1) +
+                " of " + totalPages +
+                " | Total records: " + result.totalElements;
+
+            document.getElementById("auditPrevious").disabled =
+                currentPage <= 0;
+
+            document.getElementById("auditNext").disabled =
+                currentPage >= totalPages - 1;
+
+        } catch (error) {
+
+            tableContainer.style.display = "none";
+            pagination.style.display = "none";
+
+            showMessage(
+                "auditMessage",
+                "Unable to load audit history: " + error.message,
+                "error"
+            );
+        }
+    }
+
+
+    function clearAuditFilters() {
+
+        document.getElementById("auditUsername").value = "";
+        document.getElementById("auditRole").value = "";
+        document.getElementById("auditAction").value = "";
+        document.getElementById("auditFromDate").value = "";
+        document.getElementById("auditToDate").value = "";
+
+        loadAuditLogs(0);
+    }
+
+    const ID_DOCUMENT_API =
+        "<%= request.getContextPath() %>/api/id-documents";
+
+    async function loadPendingDocuments() {
+        const container = document.getElementById("pendingDocumentsContainer");
+
+        try {
+            const response = await fetch(
+                ID_DOCUMENT_API + "/admin/pending",
+                { credentials: "same-origin" }
+            );
+
+            const documents = await response.json();
+
+            if (!response.ok) {
+                throw new Error(documents.message || "Unable to load documents.");
+            }
+
+            if (documents.length === 0) {
+                container.innerHTML = "<p>No pending ID documents.</p>";
+                return;
+            }
+
+            container.innerHTML = documents.map(function(doc) {
+                return (
+                    '<div class="document-card">' +
+                        '<h3>' + escapeHtml(doc.customerName) + '</h3>' +
+                        '<p>Customer ID: ' + escapeHtml(doc.customerId) + '</p>' +
+                        '<p>Account Number: ' + escapeHtml(doc.accountNumber) + '</p>' +
+                        '<p>Document: ' + escapeHtml(doc.fileName) + '</p>' +
+                        '<p>Status: ' + escapeHtml(doc.status) + '</p>' +
+
+                        '<button type="button" onclick="viewIdDocument(' + doc.id + ')">' +
+                            'View Document' +
+                        '</button>' +
+
+                        '<button type="button" onclick="approveIdDocument(' + doc.id + ')">' +
+                            'Approve' +
+                        '</button>' +
+
+                        '<button type="button" onclick="rejectIdDocument(' + doc.id + ')">' +
+                            'Reject' +
+                        '</button>' +
+                    '</div>'
+                );
+            }).join("");
+
+        } catch (error) {
+            container.innerHTML = "";
+            showMessage("documentMessage", error.message, true);
+        }
+    }
+
+
+    function viewIdDocument(id) {
+        window.open(
+            ID_DOCUMENT_API + "/admin/" + id + "/file",
+            "_blank"
+        );
+    }
+
+    async function approveIdDocument(id) {
+        if (!confirm("Approve this ID document and activate the account?")) {
+            return;
+        }
+
+        await updateIdDocument(id, "approve");
+    }
+
+    async function rejectIdDocument(id) {
+        const reason = prompt("Enter the reason for rejection:");
+
+        if (!reason || !reason.trim()) {
+            return;
+        }
+
+        await updateIdDocument(id, "reject", { reason: reason.trim() });
+    }
+
+    async function updateIdDocument(id, action, body = {}) {
+        const csrfToken =
+            document.querySelector('meta[name="csrf-token"]').content;
+
+        try {
+            const response = await fetch(
+                ID_DOCUMENT_API + "/admin/" + id + "/" + action,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify(body)
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || "Operation failed.");
+            }
+
+            showMessage("documentMessage", result.message);
+            await loadPendingDocuments();
+
+        } catch (error) {
+            showMessage("documentMessage", error.message, true);
+        }
+    }
+
+
+    // LOAD DASHBOARD DATA
+    window.addEventListener("DOMContentLoaded", function() {
+        loadStaff();
+        loadAuditLogs(0);
+        loadPendingDocuments();
+    });
 
 </script>
 
 </body>
 </html>
-

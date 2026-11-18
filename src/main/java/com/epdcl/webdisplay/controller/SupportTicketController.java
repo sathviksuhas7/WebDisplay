@@ -1,11 +1,15 @@
+
 package com.epdcl.webdisplay.controller;
 
 import com.epdcl.webdisplay.dto.SupportTicketDto;
 import com.epdcl.webdisplay.dto.TicketRemarkDto;
 import com.epdcl.webdisplay.dto.HelpdeskEmployeeDto;
+import com.epdcl.webdisplay.dto.TicketConversationMessageDto;
+
 import com.epdcl.webdisplay.entity.Customer;
 import com.epdcl.webdisplay.entity.Employee;
 import com.epdcl.webdisplay.entity.User;
+
 import com.epdcl.webdisplay.repo.EmployeeRepository;
 import com.epdcl.webdisplay.service.impl.CustomerService;
 import com.epdcl.webdisplay.service.impl.SupportTicketService;
@@ -46,7 +50,7 @@ public class SupportTicketController {
         return user;
     }
 
-    // CUSTOMER: Raise a ticket
+    // CUSTOMER: Create ticket
     @PostMapping("/customer/tickets")
     public ResponseEntity<SupportTicketDto> createTicket(
             @RequestBody SupportTicketDto dto,
@@ -73,6 +77,43 @@ public class SupportTicketController {
         );
     }
 
+    // CUSTOMER: View own ticket conversation
+    @GetMapping("/customer/tickets/{ticketId}/conversation")
+    public ResponseEntity<List<TicketConversationMessageDto>>
+    getCustomerConversation(
+            @PathVariable Long ticketId,
+            HttpSession session) {
+
+        User user = getLoggedInUser(session);
+        Customer customer = customerService.getCustomerByUserId(user.getId());
+
+        return ResponseEntity.ok(
+                ticketService.getCustomerConversation(
+                        customer.getCustomerId(),
+                        ticketId
+                )
+        );
+    }
+
+    // CUSTOMER: Reply to own ticket
+    @PostMapping("/customer/tickets/{ticketId}/conversation")
+    public ResponseEntity<TicketConversationMessageDto> addCustomerReply(
+            @PathVariable Long ticketId,
+            @RequestBody Map<String, String> request,
+            HttpSession session) {
+
+        User user = getLoggedInUser(session);
+        Customer customer = customerService.getCustomerByUserId(user.getId());
+
+        return ResponseEntity.ok(
+                ticketService.addCustomerReply(
+                        customer.getCustomerId(),
+                        ticketId,
+                        request.get("message")
+                )
+        );
+    }
+
     // MANAGER: View all tickets
     @GetMapping("/helpdesk/tickets")
     public ResponseEntity<List<SupportTicketDto>> getAllTickets(
@@ -85,7 +126,7 @@ public class SupportTicketController {
         );
     }
 
-    // EMPLOYEE: Update progress on an assigned ticket
+    // EMPLOYEE: Update progress on assigned ticket
     @PutMapping("/helpdesk/tickets/{ticketId}")
     public ResponseEntity<SupportTicketDto> updateTicket(
             @PathVariable Long ticketId,
@@ -104,7 +145,7 @@ public class SupportTicketController {
         );
     }
 
-    // MANAGER: Assign or reassign a ticket
+    // MANAGER: Assign or reassign ticket
     @PutMapping("/helpdesk/tickets/{ticketId}/assign/{employeeId}")
     public ResponseEntity<SupportTicketDto> assignTicket(
             @PathVariable Long ticketId,
@@ -122,7 +163,25 @@ public class SupportTicketController {
         );
     }
 
-    // EMPLOYEE: Submit completed work to manager for review
+    // EMPLOYEE: Send customer-visible update
+    @PutMapping("/helpdesk/tickets/{ticketId}/customer-update")
+    public ResponseEntity<SupportTicketDto> sendCustomerUpdate(
+            @PathVariable Long ticketId,
+            @RequestBody Map<String, String> request,
+            HttpSession session) {
+
+        User user = getLoggedInUser(session);
+
+        return ResponseEntity.ok(
+                ticketService.sendCustomerUpdate(
+                        ticketId,
+                        user.getId(),
+                        request.get("message")
+                )
+        );
+    }
+
+    // EMPLOYEE: Submit work for manager review
     @PutMapping("/helpdesk/tickets/{ticketId}/submit-review")
     public ResponseEntity<SupportTicketDto> submitForReview(
             @PathVariable Long ticketId,
@@ -142,7 +201,7 @@ public class SupportTicketController {
         );
     }
 
-    // MANAGER: Close a ticket or return it for more work
+    // MANAGER: Close or return ticket
     @PutMapping("/helpdesk/tickets/{ticketId}/review")
     public ResponseEntity<SupportTicketDto> reviewTicket(
             @PathVariable Long ticketId,
@@ -156,12 +215,16 @@ public class SupportTicketController {
                         ticketId,
                         user.getId(),
                         request.get("decision"),
-                        request.get("remarks")
+                        request.get("remarks"),
+                        request.get("employeeId") == null
+                                || request.get("employeeId").isBlank()
+                                ? null
+                                : Long.valueOf(request.get("employeeId"))
                 )
         );
     }
 
-    // EMPLOYEE: View tickets assigned to them
+    // EMPLOYEE: View assigned tickets
     @GetMapping("/helpdesk/my-tickets")
     public ResponseEntity<List<SupportTicketDto>> getMyAssignedTickets(
             HttpSession session) {
@@ -173,7 +236,7 @@ public class SupportTicketController {
         );
     }
 
-    // EMPLOYEE: Add an investigation remark
+    // EMPLOYEE: Add internal investigation remark
     @PostMapping("/helpdesk/tickets/{ticketId}/remarks")
     public ResponseEntity<TicketRemarkDto> addRemark(
             @PathVariable Long ticketId,
@@ -191,7 +254,7 @@ public class SupportTicketController {
         );
     }
 
-    // EMPLOYEE or MANAGER: View investigation history
+    // EMPLOYEE OR MANAGER: View internal investigation history
     @GetMapping("/helpdesk/tickets/{ticketId}/remarks")
     public ResponseEntity<List<TicketRemarkDto>> getTicketRemarks(
             @PathVariable Long ticketId,
@@ -207,7 +270,7 @@ public class SupportTicketController {
         );
     }
 
-    // MANAGER: View team-wide statistics
+    // MANAGER: View statistics
     @GetMapping("/helpdesk/tickets/statistics")
     public ResponseEntity<Map<String, Long>> getTicketStatistics(
             HttpSession session) {
@@ -219,7 +282,7 @@ public class SupportTicketController {
         );
     }
 
-    // MANAGER or EMPLOYEE: Filter tickets within permitted scope
+    // MANAGER OR EMPLOYEE: Filter tickets
     @GetMapping("/helpdesk/tickets/filter")
     public ResponseEntity<List<SupportTicketDto>> filterTickets(
             @RequestParam(required = false) String status,
@@ -237,7 +300,7 @@ public class SupportTicketController {
         );
     }
 
-    // MANAGER: Get employees available for ticket assignment
+    // MANAGER: Get assignable Helpdesk employees
     @GetMapping("/helpdesk/employees")
     public ResponseEntity<List<HelpdeskEmployeeDto>> getHelpdeskEmployees(
             HttpSession session) {
@@ -249,7 +312,7 @@ public class SupportTicketController {
         );
     }
 
-    // Any Helpdesk user: Get their profile and designation
+    // HELPDESK: Get logged-in employee profile
     @GetMapping("/helpdesk/me")
     public ResponseEntity<Map<String, String>> getLoggedInHelpdesk(
             HttpSession session) {
@@ -270,5 +333,16 @@ public class SupportTicketController {
         );
     }
 
+    // EMPLOYEE: End customer-facing conversation
+    @PutMapping("/helpdesk/tickets/{ticketId}/conversation/end")
+    public ResponseEntity<SupportTicketDto> endConversation(
+            @PathVariable Long ticketId,
+            HttpSession session) {
 
+        User user = getLoggedInUser(session);
+
+        return ResponseEntity.ok(
+                ticketService.endConversation(ticketId, user.getId())
+        );
+    }
 }

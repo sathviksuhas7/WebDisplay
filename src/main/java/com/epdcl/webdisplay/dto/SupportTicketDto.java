@@ -1,4 +1,3 @@
-
 package com.epdcl.webdisplay.dto;
 
 import java.time.LocalDateTime;
@@ -7,17 +6,32 @@ public class SupportTicketDto {
 
     private Long ticketId;
     private Long customerId;
+
     private String category;
     private String subject;
     private String description;
     private String priority;
     private String status;
+
     private String resolutionRemarks;
+    private String customerRemarks;
+    private String employeeUpdates;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime slaDeadline;
+
+    private boolean overdue;
+
+    private boolean escalated;
+    private LocalDateTime escalatedAt;
 
     private Long assignedEmployeeId;
     private String assignedEmployeeName;
+
+    private boolean conversationEnded;
+    private LocalDateTime conversationEndedAt;
+    private String conversationEndedBy;
 
     public Long getTicketId() {
         return ticketId;
@@ -83,6 +97,22 @@ public class SupportTicketDto {
         this.resolutionRemarks = resolutionRemarks;
     }
 
+    public String getCustomerRemarks() {
+        return customerRemarks;
+    }
+
+    public void setCustomerRemarks(String customerRemarks) {
+        this.customerRemarks = customerRemarks;
+    }
+
+    public String getEmployeeUpdates() {
+        return employeeUpdates;
+    }
+
+    public void setEmployeeUpdates(String employeeUpdates) {
+        this.employeeUpdates = employeeUpdates;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -97,6 +127,22 @@ public class SupportTicketDto {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getSlaDeadline() {
+        return slaDeadline;
+    }
+
+    public void setSlaDeadline(LocalDateTime slaDeadline) {
+        this.slaDeadline = slaDeadline;
+    }
+
+    public boolean isOverdue() {
+        return overdue;
+    }
+
+    public void setOverdue(boolean overdue) {
+        this.overdue = overdue;
     }
 
     public Long getAssignedEmployeeId() {
@@ -115,14 +161,43 @@ public class SupportTicketDto {
         this.assignedEmployeeName = assignedEmployeeName;
     }
 
-
-    private String customerRemarks;
-
-    public String getCustomerRemarks() {
-        return customerRemarks;
+    public boolean isConversationEnded() {
+        return conversationEnded;
     }
 
-    public void setCustomerRemarks(String customerRemarks) {
-        this.customerRemarks = customerRemarks;
+    public void setConversationEnded(boolean conversationEnded) {
+        this.conversationEnded = conversationEnded;
+    }
+
+    public LocalDateTime getConversationEndedAt() {
+        return conversationEndedAt;
+    }
+
+    public void setConversationEndedAt(LocalDateTime conversationEndedAt) {
+        this.conversationEndedAt = conversationEndedAt;
+    }
+
+    public String getConversationEndedBy() {
+        return conversationEndedBy;
+    }
+
+    public void setConversationEndedBy(String conversationEndedBy) {
+        this.conversationEndedBy = conversationEndedBy;
+    }
+
+    public boolean isEscalated() {
+        return escalated;
+    }
+
+    public void setEscalated(boolean escalated) {
+        this.escalated = escalated;
+    }
+
+    public LocalDateTime getEscalatedAt() {
+        return escalatedAt;
+    }
+
+    public void setEscalatedAt(LocalDateTime escalatedAt) {
+        this.escalatedAt = escalatedAt;
     }
 }

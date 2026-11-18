@@ -13,6 +13,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import com.epdcl.webdisplay.exception.AccountException;
+import com.epdcl.webdisplay.audit.annotation.Audited;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
@@ -29,6 +31,10 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     // Create Customer
+    @Audited(
+            action = "CUSTOMER_PROFILE_CREATED",
+            details = "Customer profile was created"
+    )
     @Override
     @Transactional
     public Customer createCustomer(
@@ -119,4 +125,6 @@ public class CustomerServiceImpl implements CustomerService {
                 customer.getAddress()
         );
     }
+
+
 }

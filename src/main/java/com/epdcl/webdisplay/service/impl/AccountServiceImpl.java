@@ -32,6 +32,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 
+import com.epdcl.webdisplay.audit.annotation.Audited;
+
 @Service
 public class AccountServiceImpl implements AccountService {
 
@@ -126,12 +128,22 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // Add Account and Link It to a Customer
+    @Audited(
+            action = "ACCOUNT_CREATED",
+            details = "Bank account was created"
+    )
     @Override
     @Transactional
     public AccountDto createAccount(AccountDto accountDto) {
 
         if (accountDto.getCustomerId() == null) {
             throw new AccountException("Customer ID is required");
+        }
+
+        if (accountRepository.existsByCustomerCustomerId(
+                accountDto.getCustomerId())) {
+            throw new AccountException(
+                    "Customer already has an account. Only one account is permitted per customer.");
         }
 
         Customer customer = customerRepository.findById(
@@ -304,6 +316,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // Deactivate Account
+    @Audited(
+            action = "ACCOUNT_DEACTIVATED",
+            details = "Account was deactivated"
+    )
     @Override
     public void deactivateAccount(Long id) {
 
@@ -317,6 +333,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // Activate Account
+    @Audited(
+            action = "ACCOUNT_ACTIVATED",
+            details = "Account was activated"
+    )
     @Override
     public void activateAccount(Long id) {
 

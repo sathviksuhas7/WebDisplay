@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.epdcl.webdisplay.entity.User;
 import com.epdcl.webdisplay.repo.UserRepository;
+import com.epdcl.webdisplay.audit.AuditService;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
@@ -22,9 +23,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
+    private final AuditService auditService;
 
-    public SessionAuthenticationFilter(UserRepository userRepository) {
+    public SessionAuthenticationFilter(
+            UserRepository userRepository,
+            AuditService auditService) {
         this.userRepository = userRepository;
+        this.auditService = auditService;
     }
 
     @Override
@@ -36,7 +41,8 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        return path.equals("/login")
+        return path.equals("/")
+                || path.equals("/login")
                 || path.equals("/register")
                 || path.startsWith("/css/")
                 || path.startsWith("/js/")
@@ -66,6 +72,13 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
         // GET USER FROM SESSION
         User sessionUser = (User) session.getAttribute("loggedInUser");
+
+        // REJECT SESSIONS REPLACED BY A NEWER LOGIN
+        if (!auditService.isCurrentSession(sessionUser, session)) {
+            session.invalidate();
+            rejectUnauthenticated(request, response, null);
+            return;
+        }
 
         // FETCH LATEST USER DETAILS FROM DATABASE
         User currentUser = userRepository.findById(sessionUser.getId())
@@ -124,6 +137,42 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
         String role = currentUser.getRole().name();
 
+        /*
+         * FORCE CUSTOMER PASSWORD CHANGE
+         *
+         * Customers with an initial password can access only
+         * /change-password until they set a new password.
+         */
+        if ("CUSTOMER".equals(role)
+                && currentUser.isMustChangePassword()
+                && !path.equals("/change-password")) {
+
+            if (path.startsWith("/api/")) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+
+                response.getWriter().write(
+                        "{\"message\":\"PASSWORD_CHANGE_REQUIRED\"}");
+            } else {
+                response.sendRedirect(
+                        request.getContextPath() + "/change-password");
+            }
+
+            return;
+        }
+
+        // ONLY CUSTOMERS CAN USE THE PASSWORD CHANGE PAGE
+        if (path.equals("/change-password")
+                && !"CUSTOMER".equals(role)) {
+
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "You are not authorized to access this page.");
+
+            return;
+        }
+
         // DEFAULT DENY FOR API REQUESTS
         boolean allowed = !path.startsWith("/api/");
 
@@ -150,6 +199,12 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             allowed = "HELPDESK".equals(role);
         }
 
+        // BANK MANAGER DASHBOARD
+        else if (path.equals("/bank-manager")
+                || path.startsWith("/bank-manager/")) {
+            allowed = "BANK_MANAGER".equals(role);
+        }
+
         // ADMIN MANAGEMENT APIs
         else if (path.equals("/api/admin")
                 || path.startsWith("/api/admin/")) {
@@ -174,13 +229,66 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             allowed = "EMPLOYEE".equals(role);
         }
 
+        // ID DOCUMENT APIs
+        else if (path.equals("/api/id-documents")
+                || path.startsWith("/api/id-documents/")) {
+
+            if ("EMPLOYEE".equals(role)) {
+
+                allowed =
+                        (HttpMethod.POST.matches(request.getMethod())
+                                && path.equals("/api/id-documents/accounts"))
+                                ||
+                                (HttpMethod.GET.matches(request.getMethod())
+                                        && path.equals("/api/id-documents/employee/rejected"))
+                                ||
+                                (HttpMethod.GET.matches(request.getMethod())
+                                        && path.equals("/api/id-documents/employee/applications"))
+                                ||
+                                (HttpMethod.GET.matches(request.getMethod())
+                                        && path.equals("/api/id-documents/employee/applications/search"))
+                                ||
+                                (HttpMethod.POST.matches(request.getMethod())
+                                        && path.matches("/api/id-documents/\\d+/reupload"));
+
+            } else if ("BANK_MANAGER".equals(role)) {
+
+                // BANK MANAGER: ONLY DOCUMENT VERIFICATION APIs
+                allowed =
+                        (HttpMethod.GET.matches(request.getMethod())
+                                && path.equals("/api/id-documents/manager/pending"))
+                                ||
+                                (HttpMethod.GET.matches(request.getMethod())
+                                        && path.matches("/api/id-documents/manager/\\d+/file"))
+                                ||
+                                (HttpMethod.POST.matches(request.getMethod())
+                                        && path.matches("/api/id-documents/manager/\\d+/approve"))
+                                ||
+                                (HttpMethod.POST.matches(request.getMethod())
+                                        && path.matches("/api/id-documents/manager/\\d+/reject"))
+                                ||
+                                (HttpMethod.GET.matches(request.getMethod())
+                                        && path.equals("/api/id-documents/manager/address-change/pending"))
+                                ||
+                                (HttpMethod.GET.matches(request.getMethod())
+                                        && path.matches("/api/id-documents/manager/address-change/\\d+/proof"))
+                                ||
+                                (HttpMethod.POST.matches(request.getMethod())
+                                        && path.matches("/api/id-documents/manager/address-change/\\d+/approve"))
+                                ||
+                                (HttpMethod.POST.matches(request.getMethod())
+                                        && path.matches("/api/id-documents/manager/address-change/\\d+/reject"));
+            }
+        }
 
         // ACCOUNT AND TRANSACTION APIs
         else if (path.equals("/api/accounts")
                 || path.startsWith("/api/accounts/")) {
 
             if ("EMPLOYEE".equals(role)) {
-                allowed = true;
+                allowed = !(HttpMethod.POST.matches(request.getMethod())
+                        && path.matches("/api/accounts/?"));
+
             } else if ("CUSTOMER".equals(role)) {
                 allowed = path.startsWith("/api/accounts/recipient/")
                         || path.matches("/api/accounts/[^/]+/transfer");

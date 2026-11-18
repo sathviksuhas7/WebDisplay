@@ -6,6 +6,8 @@ import com.epdcl.webdisplay.entity.Role;
 
 public interface UserService {
 
+    void updateCustomerEmail(Long userId, String newEmail);
+
     User findByUsername(String username);
 
     User authenticateUser(String username, String password);

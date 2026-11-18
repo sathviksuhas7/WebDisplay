@@ -16,6 +16,11 @@ public class DashboardController {
         return "employee-dashboard";
     }
 
+    @GetMapping("/bank-manager/dashboard")
+    public String bankManagerDashboard() {
+        return "bank-manager-dashboard";
+    }
+
     @GetMapping("/customer/dashboard")
     public String customerDashboard() {
         return "customer-dashboard";

@@ -1,3 +1,4 @@
+
 package com.epdcl.webdisplay.controller;
 
 import com.epdcl.webdisplay.dto.StaffCreateRequest;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -31,6 +33,16 @@ public class AdminController {
 
         this.userService = userService;
         this.employeeService = employeeService;
+    }
+
+    private boolean isValidEmployeeType(String employeeType) {
+        return employeeType != null
+                && (employeeType.trim().equalsIgnoreCase("PRIVATE")
+                || employeeType.trim().equalsIgnoreCase("DEPARTMENT"));
+    }
+
+    private String normalizeEmployeeType(String employeeType) {
+        return employeeType.trim().toUpperCase(Locale.ROOT);
     }
 
     private boolean isHelpdeskManager(Employee employee) {
@@ -61,17 +73,19 @@ public class AdminController {
                 || request.getPassword().isBlank()
                 || request.getEmployeeName() == null
                 || request.getEmployeeName().isBlank()
-                || request.getRole() == null) {
+                || request.getRole() == null
+                || !isValidEmployeeType(request.getEmployeeType())) {
 
             return ResponseEntity.badRequest()
-                    .body("Username, password, employee name and role are required.");
+                    .body("Username, password, employee name, role and valid employee type (PRIVATE or DEPARTMENT) are required.");
         }
 
         if (request.getRole() != Role.EMPLOYEE
-                && request.getRole() != Role.HELPDESK) {
+                && request.getRole() != Role.HELPDESK
+                && request.getRole() != Role.BANK_MANAGER) {
 
             return ResponseEntity.badRequest()
-                    .body("Only EMPLOYEE and HELPDESK accounts can be created.");
+                    .body("Only EMPLOYEE, HELPDESK and BANK_MANAGER accounts can be created.");
         }
 
         boolean requestingManager =
@@ -105,7 +119,8 @@ public class AdminController {
                 request.getEmployeeName(),
                 request.getDepartment(),
                 designation,
-                request.getPhone()
+                request.getPhone(),
+                normalizeEmployeeType(request.getEmployeeType())
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -129,12 +144,12 @@ public class AdminController {
             @PathVariable Long employeeId,
             @RequestBody StaffUpdateRequest request) {
 
-        if (request.getRole() != null
-                && request.getRole() != Role.EMPLOYEE
-                && request.getRole() != Role.HELPDESK) {
+        if (request.getRole() != Role.EMPLOYEE
+                && request.getRole() != Role.HELPDESK
+                && request.getRole() != Role.BANK_MANAGER) {
 
             return ResponseEntity.badRequest()
-                    .body("Staff role can only be EMPLOYEE or HELPDESK.");
+                    .body("Only EMPLOYEE, HELPDESK and BANK_MANAGER accounts can be created.");
         }
 
         if (request.getEmployeeName() == null
@@ -142,6 +157,13 @@ public class AdminController {
 
             return ResponseEntity.badRequest()
                     .body("Employee name is required.");
+        }
+
+        if (request.getEmployeeType() != null
+                && !isValidEmployeeType(request.getEmployeeType())) {
+
+            return ResponseEntity.badRequest()
+                    .body("Employee type must be PRIVATE or DEPARTMENT.");
         }
 
         Employee existingEmployee = employeeService.getAllEmployees()
@@ -159,24 +181,33 @@ public class AdminController {
                 ? request.getRole()
                 : existingEmployee.getUser().getRole();
 
+        String resultingDesignation = request.getDesignation() != null
+                ? request.getDesignation()
+                : existingEmployee.getDesignation();
+
         boolean requestingManager =
                 resultingRole == Role.HELPDESK
                         && MANAGER_DESIGNATION.equalsIgnoreCase(
-                        request.getDesignation() == null
+                        resultingDesignation == null
                                 ? ""
-                                : request.getDesignation().trim());
+                                : resultingDesignation.trim());
 
         if (requestingManager && managerAlreadyExists(employeeId)) {
             return ResponseEntity.badRequest()
                     .body("Another Helpdesk Manager already exists.");
         }
 
+        String employeeType = request.getEmployeeType() != null
+                ? normalizeEmployeeType(request.getEmployeeType())
+                : null;
+
         Employee employee = employeeService.updateEmployee(
                 employeeId,
                 request.getEmployeeName(),
                 request.getDepartment(),
                 request.getDesignation(),
-                request.getPhone()
+                request.getPhone(),
+                employeeType
         );
 
         if (request.getRole() != null) {

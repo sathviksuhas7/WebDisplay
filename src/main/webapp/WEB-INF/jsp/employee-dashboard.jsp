@@ -107,6 +107,11 @@
             background: #105487;
         }
 
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .secondary {
             background: #526477;
         }
@@ -126,6 +131,15 @@
 
         .error {
             color: #c62828;
+        }
+
+        .message.error {
+            background: #fff1f0;
+            border: 1px solid #ffc9c5;
+            color: #c62828;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-top: 12px;
         }
 
         .muted {
@@ -158,8 +172,6 @@
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 10px;
         }
-
-        /* RESULT DISPLAY */
 
         .hidden {
             display: none !important;
@@ -198,10 +210,13 @@
 
 <header>
     <h2>WebDisplay | Employee Portal</h2>
+
     <form action="<%= request.getContextPath() %>/logout"
           method="post"
           style="display:inline;">
-            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
+        <input type="hidden" name="csrfToken"
+               value="${sessionScope.csrfToken}">
+
         <button type="submit"
                 style="background:#dc2626; color:white; padding:10px 18px;
                        border:0; border-radius:7px; cursor:pointer;">
@@ -213,7 +228,6 @@
 <div class="container">
 
     <div class="welcome">
-
         <p id="welcomeMessage">Loading welcome message...</p>
         <p>Manage customers, accounts, transactions and banking operations.</p>
     </div>
@@ -280,23 +294,23 @@
             </div>
         </div>
 
-        <button onclick="searchCustomers()">Search</button>
-        <button class="secondary" onclick="clearCustomerSearch()">Clear</button>
+        <button type="button" onclick="searchCustomers()">Search</button>
+        <button type="button" class="secondary"
+                onclick="clearCustomerSearch()">Clear</button>
 
         <p id="customerSearchMessage" class="result-message hidden"></p>
 
         <div id="customerResultsContainer" class="table-container hidden">
             <table>
                 <thead>
-                <tr>
-                    <th>Customer ID</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Address</th>
-                    <th>Action</th>
-                </tr>
+                    <tr>
+                        <th>Customer ID</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Action</th>
+                    </tr>
                 </thead>
-
                 <tbody id="customerResults"></tbody>
             </table>
         </div>
@@ -322,6 +336,13 @@
                 </div>
             </div>
 
+            <label>Customer ID Proof (PDF, JPG or PNG — Maximum 5 MB)</label>
+            <input
+                id="customerIdDocument"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                required>
+
             <button type="submit">Create Account</button>
         </form>
 
@@ -335,12 +356,13 @@
         <label>Account Number</label>
         <input id="lookupAccountNumber" placeholder="Enter account number">
 
-        <button onclick="searchAccount()">Search Account</button>
-        <button class="secondary" onclick="clearAccountSearch()">Clear</button>
-        <button class="secondary" onclick="loadAllAccounts()">View All Accounts</button>
+        <button type="button" onclick="searchAccount()">Search Account</button>
+        <button type="button" class="secondary"
+                onclick="clearAccountSearch()">Clear</button>
+        <button type="button" class="secondary"
+                onclick="loadAllAccounts()">View All Accounts</button>
 
         <p id="accountSearchMessage" class="result-message hidden"></p>
-
         <div id="accountDetails" class="hidden"></div>
     </div>
 
@@ -352,7 +374,8 @@
         <input type="text" id="editAccountId" placeholder="Enter account ID">
 
         <label>Account Holder Name</label>
-        <input type="text" id="editHolderName" placeholder="Enter account holder name">
+        <input type="text" id="editHolderName"
+               placeholder="Enter account holder name">
 
         <label>Branch Name</label>
         <input type="text" id="editBranchName" placeholder="Enter branch name">
@@ -360,7 +383,7 @@
         <label>District</label>
         <input type="text" id="editDistrict" placeholder="Enter district">
 
-        <button onclick="editAccount()">Update Account</button>
+        <button type="button" onclick="editAccount()">Update Account</button>
 
         <p id="editMessage" class="message"></p>
     </div>
@@ -370,14 +393,18 @@
         <h2>Deposit / Withdrawal</h2>
 
         <label>Account ID</label>
-        <input id="operationAccountId" type="text" placeholder="Enter account ID">
+        <input id="operationAccountId" type="text"
+               placeholder="Enter account ID">
 
         <label>Amount (₹)</label>
         <input id="operationAmount" type="number" min="0.01" step="0.01"
                placeholder="Enter amount">
 
-        <button class="success" onclick="performTransaction('deposit')">Deposit</button>
-        <button class="danger" onclick="performTransaction('withdraw')">Withdraw</button>
+        <button type="button" class="success"
+                onclick="performTransaction('deposit')">Deposit</button>
+
+        <button type="button" class="danger"
+                onclick="performTransaction('withdraw')">Withdraw</button>
 
         <p id="operationMessage" class="message"></p>
     </div>
@@ -386,27 +413,94 @@
     <div class="section">
         <h2>All Accounts</h2>
 
-        <button onclick="loadAllAccounts()">Refresh Accounts</button>
+        <button type="button" onclick="loadAllAccounts()">Refresh Accounts</button>
 
         <p id="allAccountsMessage" class="result-message hidden"></p>
 
         <div id="accountTableContainer" class="table-container hidden">
             <table>
                 <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Account Number</th>
-                    <th>Holder</th>
-                    <th>Balance</th>
-                    <th>Branch</th>
-                    <th>District</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
+                    <tr>
+                        <th>ID</th>
+                        <th>Account Number</th>
+                        <th>Holder</th>
+                        <th>Balance</th>
+                        <th>Branch</th>
+                        <th>District</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
                 </thead>
-
                 <tbody id="accountTable"></tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- ID DOCUMENT APPLICATIONS -->
+    <div class="section">
+        <h2>ID Document Applications</h2>
+
+        <p class="muted">
+            Search and track all customer ID document applications created by you.
+        </p>
+
+        <div class="form-grid">
+            <div>
+                <label for="documentApplicationSearch">Search Customer</label>
+                <input type="text"
+                       id="documentApplicationSearch"
+                       placeholder="Customer name, customer ID or account number">
+            </div>
+
+            <div>
+                <label for="documentApplicationStatus">Verification Status</label>
+                <select id="documentApplicationStatus">
+                    <option value="ALL">All Applications</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="button" onclick="searchDocumentApplications()">
+            Search
+        </button>
+
+        <button type="button" class="secondary"
+                onclick="clearDocumentApplicationSearch()">
+            Clear
+        </button>
+
+        <button type="button" class="secondary"
+                onclick="loadDocumentApplications()">
+            Refresh
+        </button>
+
+        <p id="documentApplicationsMessage"
+           class="result-message hidden"></p>
+
+        <div id="documentApplicationsContainer"></div>
+
+        <div id="documentApplicationsPagination"
+             style="display:none; margin-top:20px;">
+
+            <button type="button"
+                    class="secondary"
+                    id="previousDocumentApplicationsPage"
+                    onclick="changeDocumentApplicationsPage(-1)">
+                Previous
+            </button>
+
+            <span id="documentApplicationsPageInfo"
+                  style="margin:0 12px;"></span>
+
+            <button type="button"
+                    class="secondary"
+                    id="nextDocumentApplicationsPage"
+                    onclick="changeDocumentApplicationsPage(1)">
+                Next
+            </button>
         </div>
     </div>
 
@@ -415,25 +509,26 @@
         <h2>Transaction History</h2>
 
         <label>Account ID</label>
-        <input id="historyAccountId" type="text" placeholder="Enter account ID">
+        <input id="historyAccountId" type="text"
+               placeholder="Enter account ID">
 
-        <button onclick="loadTransactions()">View Transactions</button>
-        <button class="secondary" onclick="clearTransactionHistory()">Clear</button>
+        <button type="button" onclick="loadTransactions()">View Transactions</button>
+        <button type="button" class="secondary"
+                onclick="clearTransactionHistory()">Clear</button>
 
         <p id="transactionMessage" class="result-message hidden"></p>
 
         <div id="transactionTableContainer" class="table-container hidden">
             <table>
                 <thead>
-                <tr>
-                    <th>Transaction ID</th>
-                    <th>Type</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                    <th>Balance After</th>
-                </tr>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Balance After</th>
+                    </tr>
                 </thead>
-
                 <tbody id="transactionTable"></tbody>
             </table>
         </div>
@@ -447,6 +542,7 @@
 
     // COMMON API REQUEST FUNCTION
     async function apiRequest(url, options = {}) {
+
         const response = await fetch(url, {
             ...options,
             credentials: "same-origin",
@@ -461,23 +557,39 @@
 
         const responseText = await response.text();
 
+        let data = null;
+
+        if (responseText) {
+            try {
+                data = JSON.parse(responseText);
+            } catch {
+                data = responseText;
+            }
+        }
+
         if (!response.ok) {
-            throw new Error(responseText || "Request failed: " + response.status);
+
+            let errorMessage = "Something went wrong. Please try again.";
+
+            if (typeof data === "string") {
+                errorMessage = data;
+            } else if (data && typeof data === "object") {
+                errorMessage = data.message
+                    || data.error
+                    || data.detail
+                    || errorMessage;
+            }
+
+            throw new Error(errorMessage);
         }
 
-        if (!responseText) {
-            return null;
-        }
-
-        try {
-            return JSON.parse(responseText);
-        } catch {
-            return responseText;
-        }
+        return data;
     }
+
 
     // ESCAPE HTML
     function escapeHtml(value) {
+
         return String(value ?? "").replace(/[&<>"']/g, char => ({
             "&": "&amp;",
             "<": "&lt;",
@@ -487,26 +599,29 @@
         })[char]);
     }
 
+
     // DISPLAY MESSAGES
     function showMessage(id, message, error = false) {
+
         const element = document.getElementById(id);
 
         element.textContent = message;
         element.className = error ? "message error" : "message";
     }
 
-    // SHOW RESULT TABLE OR CARD
+
     function showResults(containerId) {
         document.getElementById(containerId).classList.remove("hidden");
     }
 
-    // HIDE RESULT TABLE OR CARD
+
     function hideResults(containerId) {
         document.getElementById(containerId).classList.add("hidden");
     }
 
-    // SHOW RESULT MESSAGE
+
     function showResultMessage(id, message, error = false) {
+
         const element = document.getElementById(id);
 
         element.textContent = message;
@@ -517,17 +632,21 @@
         element.classList.remove("hidden");
     }
 
-    // HIDE RESULT MESSAGE
+
     function hideResultMessage(id) {
+
         const element = document.getElementById(id);
 
         element.textContent = "";
         element.classList.add("hidden");
     }
 
+
     // CREATE CUSTOMER
-    document.getElementById("customerForm").addEventListener("submit",
+    document.getElementById("customerForm").addEventListener(
+        "submit",
         async function(event) {
+
             event.preventDefault();
 
             const customer = {
@@ -541,6 +660,7 @@
             };
 
             try {
+
                 const result = await apiRequest(API + "/customers", {
                     method: "POST",
                     body: JSON.stringify(customer)
@@ -555,8 +675,10 @@
         }
     );
 
+
     // SEARCH CUSTOMERS
     async function searchCustomers() {
+
         const name = document.getElementById("searchName").value.trim();
         const phone = document.getElementById("searchPhone").value.trim();
 
@@ -574,15 +696,11 @@
 
         const params = new URLSearchParams();
 
-        if (name) {
-            params.append("name", name);
-        }
-
-        if (phone) {
-            params.append("phone", phone);
-        }
+        if (name) params.append("name", name);
+        if (phone) params.append("phone", phone);
 
         try {
+
             const customers = await apiRequest(
                 API + "/customers/search?" + params.toString()
             );
@@ -604,7 +722,8 @@
                     <td>\${escapeHtml(customer.phone)}</td>
                     <td>\${escapeHtml(customer.address)}</td>
                     <td>
-                        <button onclick="useCustomerId('\${escapeHtml(customer.customerId)}')">
+                        <button type="button"
+                            onclick="useCustomerId('\${escapeHtml(customer.customerId)}')">
                             Select
                         </button>
                     </td>
@@ -614,6 +733,7 @@
             showResults("customerResultsContainer");
 
         } catch (error) {
+
             showResultMessage(
                 "customerSearchMessage",
                 error.message,
@@ -622,52 +742,126 @@
         }
     }
 
-    // SELECT CUSTOMER FOR ACCOUNT CREATION
+
     function useCustomerId(id) {
+
         document.getElementById("accountCustomerId").value = id;
 
         document.getElementById("accountForm")
             .scrollIntoView({ behavior: "smooth" });
     }
 
-    // CLEAR CUSTOMER SEARCH
+
     function clearCustomerSearch() {
+
         document.getElementById("searchName").value = "";
         document.getElementById("searchPhone").value = "";
-
         document.getElementById("customerResults").innerHTML = "";
 
         hideResults("customerResultsContainer");
         hideResultMessage("customerSearchMessage");
     }
 
-    // CREATE ACCOUNT
-    document.getElementById("accountForm").addEventListener("submit",
-        async function(event) {
-            event.preventDefault();
 
-            const account = {
-                customerId: Number(
-                    document.getElementById("accountCustomerId").value
-                ),
-                branchName: document.getElementById("branchName").value.trim(),
-                district: document.getElementById("district").value.trim()
-            };
+    // CREATE ACCOUNT WITH ID DOCUMENT
+    document.getElementById("accountForm").addEventListener(
+        "submit",
+        async function(e) {
+
+            e.preventDefault();
+
+            const file =
+                document.getElementById("customerIdDocument").files[0];
+
+            if (!file) {
+                showMessage(
+                    "accountMessage",
+                    "Please upload the customer's ID proof.",
+                    true
+                );
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage(
+                    "accountMessage",
+                    "File size must not exceed 5 MB.",
+                    true
+                );
+                return;
+            }
+
+            const allowedTypes = [
+                "application/pdf",
+                "image/jpeg",
+                "image/png"
+            ];
+
+            if (!allowedTypes.includes(file.type)) {
+                showMessage(
+                    "accountMessage",
+                    "Only PDF, JPG and PNG files are allowed.",
+                    true
+                );
+                return;
+            }
+
+            const formData = new FormData();
+
+            formData.append(
+                "customerId",
+                document.getElementById("accountCustomerId").value
+            );
+
+            formData.append(
+                "branchName",
+                document.getElementById("branchName").value.trim()
+            );
+
+            formData.append(
+                "district",
+                document.getElementById("district").value.trim()
+            );
+
+            formData.append("document", file);
+
+            const csrfToken =
+                document.querySelector('meta[name="csrf-token"]').content;
 
             try {
-                const result = await apiRequest(API + "/accounts", {
-                    method: "POST",
-                    body: JSON.stringify(account)
-                });
+
+                const response = await fetch(
+                    "<%= request.getContextPath() %>/api/id-documents/accounts",
+                    {
+                        method: "POST",
+                        headers: {
+                            "X-CSRF-TOKEN": csrfToken
+                        },
+                        credentials: "same-origin",
+                        body: formData
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        result.message || result.error ||
+                        "Unable to create account."
+                    );
+                }
 
                 showMessage(
                     "accountMessage",
-                    "Account created successfully. Account number: " +
-                    result.accountNumber
+                    "Account created successfully. Account Number: " +
+                    result.accountNumber +
+                    ". Status: INACTIVE — awaiting ID verification."
                 );
 
                 this.reset();
+
                 await loadAllAccounts();
+                await loadDocumentApplications();
 
             } catch (error) {
                 showMessage("accountMessage", error.message, true);
@@ -675,9 +869,12 @@
         }
     );
 
+
     // SEARCH ACCOUNT BY ACCOUNT NUMBER
     async function searchAccount() {
-        const number = document.getElementById("lookupAccountNumber").value.trim();
+
+        const number =
+            document.getElementById("lookupAccountNumber").value.trim();
 
         hideResults("accountDetails");
         hideResultMessage("accountSearchMessage");
@@ -692,6 +889,7 @@
         }
 
         try {
+
             const account = await apiRequest(
                 API + "/accounts/number/" + encodeURIComponent(number)
             );
@@ -709,6 +907,7 @@
             selectAccountForOperation(account.id);
 
         } catch (error) {
+
             showResultMessage(
                 "accountSearchMessage",
                 error.message,
@@ -717,18 +916,20 @@
         }
     }
 
-    // CLEAR ACCOUNT SEARCH
-    function clearAccountSearch() {
-        document.getElementById("lookupAccountNumber").value = "";
 
+    function clearAccountSearch() {
+
+        document.getElementById("lookupAccountNumber").value = "";
         document.getElementById("accountDetails").innerHTML = "";
 
         hideResults("accountDetails");
         hideResultMessage("accountSearchMessage");
     }
 
+
     // DISPLAY ACCOUNT DETAILS
     function displayAccountDetails(account) {
+
         document.getElementById("accountDetails").innerHTML = `
             <div class="card">
                 <h3>\${escapeHtml(account.accountNumber)}</h3>
@@ -744,12 +945,15 @@
         showResults("accountDetails");
     }
 
+
     // LOAD ALL ACCOUNTS
     async function loadAllAccounts() {
+
         hideResults("accountTableContainer");
         hideResultMessage("allAccountsMessage");
 
         try {
+
             const accounts = await apiRequest(API + "/accounts");
 
             if (!accounts || accounts.length === 0) {
@@ -772,11 +976,12 @@
                     <td>\${escapeHtml(account.district)}</td>
                     <td>\${account.active ? "Active" : "Inactive"}</td>
                     <td>
-                        <button onclick="toggleAccount('\${escapeHtml(account.id)}', \${!account.active})">
+                        <button type="button"
+                            onclick="toggleAccount('\${escapeHtml(account.id)}', \${!account.active})">
                             \${account.active ? "Deactivate" : "Activate"}
                         </button>
 
-                        <button class="secondary"
+                        <button type="button" class="secondary"
                             onclick="selectAccount('\${escapeHtml(account.id)}')">
                             Select
                         </button>
@@ -787,6 +992,7 @@
             showResults("accountTableContainer");
 
         } catch (error) {
+
             showResultMessage(
                 "allAccountsMessage",
                 error.message,
@@ -795,8 +1001,10 @@
         }
     }
 
+
     // SELECT ACCOUNT
     function selectAccount(id) {
+
         selectAccountForOperation(id);
 
         document.getElementById("editAccountId").value = id;
@@ -805,16 +1013,19 @@
             .scrollIntoView({ behavior: "smooth" });
     }
 
-    // FILL ACCOUNT ID IN BANKING AND HISTORY SECTIONS
+
     function selectAccountForOperation(id) {
+
         const accountId = String(id);
 
         document.getElementById("operationAccountId").value = accountId;
         document.getElementById("historyAccountId").value = accountId;
     }
 
+
     // EDIT ACCOUNT
     async function editAccount() {
+
         const id = document.getElementById("editAccountId").value.trim();
 
         const accountHolderName =
@@ -832,6 +1043,7 @@
         }
 
         try {
+
             await apiRequest(
                 API + "/accounts/" + encodeURIComponent(id) + "/edit",
                 {
@@ -857,9 +1069,11 @@
         }
     }
 
-    // REFRESH ACCOUNT DETAILS AFTER EDIT
+
     async function searchAccountAfterEdit(id) {
+
         try {
+
             const account = await apiRequest(
                 API + "/accounts/" + encodeURIComponent(id)
             );
@@ -867,6 +1081,7 @@
             displayAccountDetails(account);
 
         } catch (error) {
+
             showResultMessage(
                 "accountSearchMessage",
                 error.message,
@@ -875,9 +1090,12 @@
         }
     }
 
+
     // DEPOSIT OR WITHDRAW
     async function performTransaction(type) {
-        const id = document.getElementById("operationAccountId").value.trim();
+
+        const id =
+            document.getElementById("operationAccountId").value.trim();
 
         const amount = Number(
             document.getElementById("operationAmount").value
@@ -897,6 +1115,7 @@
         }
 
         try {
+
             const result = await apiRequest(
                 API + "/accounts/" + encodeURIComponent(id) + "/" + type,
                 {
@@ -922,8 +1141,10 @@
         }
     }
 
+
     // ACTIVATE OR DEACTIVATE ACCOUNT
     async function toggleAccount(id, activate) {
+
         const action = activate ? "activate" : "deactivate";
 
         if (!confirm("Are you sure you want to " + action + " this account?")) {
@@ -931,6 +1152,7 @@
         }
 
         try {
+
             const result = await apiRequest(
                 API + "/accounts/" + encodeURIComponent(id) + "/" + action,
                 {
@@ -946,6 +1168,7 @@
             );
 
         } catch (error) {
+
             showResultMessage(
                 "allAccountsMessage",
                 error.message,
@@ -954,9 +1177,12 @@
         }
     }
 
+
     // LOAD TRANSACTION HISTORY
     async function loadTransactions() {
-        const id = document.getElementById("historyAccountId").value.trim();
+
+        const id =
+            document.getElementById("historyAccountId").value.trim();
 
         hideResults("transactionTableContainer");
         hideResultMessage("transactionMessage");
@@ -971,6 +1197,7 @@
         }
 
         try {
+
             const transactions = await apiRequest(
                 API + "/accounts/" + encodeURIComponent(id) + "/transactions"
             );
@@ -998,6 +1225,7 @@
             showResults("transactionTableContainer");
 
         } catch (error) {
+
             showResultMessage(
                 "transactionMessage",
                 error.message,
@@ -1006,8 +1234,9 @@
         }
     }
 
-    // CLEAR TRANSACTION HISTORY
+
     function clearTransactionHistory() {
+
         document.getElementById("historyAccountId").value = "";
         document.getElementById("transactionTable").innerHTML = "";
 
@@ -1015,8 +1244,12 @@
         hideResultMessage("transactionMessage");
     }
 
+
+    // LOAD LOGGED-IN EMPLOYEE NAME
     async function loadLoggedInEmployeeName() {
+
         try {
+
             const employee = await apiRequest(API + "/accounts/me");
 
             if (!employee || !employee.employeeName) {
@@ -1028,6 +1261,7 @@
                 ", welcome to the Employee Dashboard!";
 
         } catch (error) {
+
             document.getElementById("welcomeMessage").innerText =
                 "Unable to load employee name.";
 
@@ -1035,10 +1269,402 @@
         }
     }
 
+
+    // =====================================================
+    // ID DOCUMENT APPLICATIONS - SERVER-SIDE SEARCH & PAGINATION
+    // =====================================================
+
+    let documentApplicationsCurrentPage = 0;
+    const DOCUMENT_APPLICATIONS_PAGE_SIZE = 10;
+
+    let documentApplicationsTotalPages = 0;
+    let documentApplicationsTotalElements = 0;
+
+
+    // LOAD APPLICATIONS
+    async function loadDocumentApplications() {
+
+        const container =
+            document.getElementById("documentApplicationsContainer");
+
+        const message =
+            document.getElementById("documentApplicationsMessage");
+
+        const searchValue = document.getElementById(
+            "documentApplicationSearch"
+        ).value.trim();
+
+        const selectedStatus = document.getElementById(
+            "documentApplicationStatus"
+        ).value.toUpperCase();
+
+        message.textContent = "";
+        message.classList.add("hidden");
+        message.classList.remove("error");
+
+        container.innerHTML = "<p>Loading applications...</p>";
+
+        document.getElementById(
+            "documentApplicationsPagination"
+        ).style.display = "none";
+
+        try {
+
+            const params = new URLSearchParams({
+                search: searchValue,
+                status: selectedStatus,
+                page: documentApplicationsCurrentPage,
+                size: DOCUMENT_APPLICATIONS_PAGE_SIZE
+            });
+
+            const response = await fetch(
+                API + "/id-documents/employee/applications/search?" + params.toString(),
+                {
+                    method: "GET",
+                    credentials: "same-origin"
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message || "Unable to load applications."
+                );
+            }
+
+            if (!Array.isArray(result.content)) {
+                throw new Error("Invalid applications response.");
+            }
+
+            documentApplicationsTotalPages = result.totalPages;
+            documentApplicationsTotalElements = result.totalElements;
+
+            renderDocumentApplications(result.content);
+
+        } catch (error) {
+
+            container.innerHTML = "";
+
+            message.textContent = error.message;
+            message.classList.remove("hidden");
+            message.classList.add("error");
+
+            console.error("Document applications loading failed:", error);
+        }
+    }
+
+
+    // SEARCH APPLICATIONS
+    function searchDocumentApplications() {
+
+        documentApplicationsCurrentPage = 0;
+
+        loadDocumentApplications();
+    }
+
+
+    // CLEAR SEARCH
+    function clearDocumentApplicationSearch() {
+
+        document.getElementById(
+            "documentApplicationSearch"
+        ).value = "";
+
+        document.getElementById(
+            "documentApplicationStatus"
+        ).value = "ALL";
+
+        documentApplicationsCurrentPage = 0;
+
+        loadDocumentApplications();
+    }
+
+
+    // CHANGE PAGE
+    function changeDocumentApplicationsPage(direction) {
+
+        const nextPage =
+            documentApplicationsCurrentPage + direction;
+
+        if (nextPage < 0 ||
+            nextPage >= documentApplicationsTotalPages) {
+            return;
+        }
+
+        documentApplicationsCurrentPage = nextPage;
+
+        loadDocumentApplications();
+    }
+
+
+    // RENDER APPLICATIONS
+    function renderDocumentApplications(currentDocuments) {
+
+        const container =
+            document.getElementById("documentApplicationsContainer");
+
+        const pagination =
+            document.getElementById("documentApplicationsPagination");
+
+        const pageInfo =
+            document.getElementById("documentApplicationsPageInfo");
+
+        if (currentDocuments.length === 0) {
+
+            container.innerHTML = `
+                <div class="card">
+                    <p>No ID document applications match your search.</p>
+                </div>
+            `;
+
+            pagination.style.display = "none";
+            return;
+        }
+
+        container.innerHTML = currentDocuments.map(doc => {
+
+            const status = String(doc.status || "").toUpperCase();
+
+            let statusColor = "#68778a";
+            let statusContent = "";
+
+            if (status === "PENDING") {
+
+                statusColor = "#b7791f";
+
+                statusContent = `
+                    <p>
+                        Your ID document has been submitted and is
+                        waiting for Bank Manager verification.
+                        No action is required right now.
+                    </p>
+                `;
+
+            } else if (status === "APPROVED") {
+
+                statusColor = "#26834a";
+
+                statusContent = `
+                    <p>
+                        Your ID document has been approved by the
+                        Bank Manager. The account has been activated.
+                    </p>
+                `;
+
+            } else if (status === "REJECTED") {
+
+                statusColor = "#c62828";
+
+                statusContent = `
+                    <p>
+                        <strong>Rejection Reason:</strong>
+                        <span class="error">
+                            \${escapeHtml(doc.rejectionReason || "No reason provided.")}
+                        </span>
+                    </p>
+
+                    <label for="replacement-\${doc.id}">
+                        Upload corrected document (PDF, JPG or PNG — max 5 MB)
+                    </label>
+
+                    <input
+                        type="file"
+                        id="replacement-\${doc.id}"
+                        accept=".pdf,.jpg,.jpeg,.png">
+
+                    <button type="button"
+                        onclick="reuploadRejectedDocument(\${doc.id})">
+                        Re-upload Document
+                    </button>
+                `;
+
+            } else {
+
+                statusContent = `
+                    <p>Application status is currently unavailable.</p>
+                `;
+            }
+
+            return `
+                <div class="card">
+
+                    <h3>Customer: \${escapeHtml(doc.customerName)}</h3>
+
+                    <p>
+                        <strong>Customer ID:</strong>
+                        \${escapeHtml(doc.customerId)}
+                    </p>
+
+                    <p>
+                        <strong>Account Number:</strong>
+                        \${escapeHtml(doc.accountNumber)}
+                    </p>
+
+                    <p>
+                        <strong>Uploaded Document:</strong>
+                        \${escapeHtml(doc.fileName)}
+                    </p>
+
+                    <p>
+                        <strong>Status:</strong>
+                        <span style="color:\${statusColor};font-weight:bold;">
+                            \${escapeHtml(status || "UNKNOWN")}
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Uploaded At:</strong>
+                        \${doc.uploadedAt
+                            ? escapeHtml(doc.uploadedAt.replace("T", " "))
+                            : "N/A"}
+                    </p>
+
+                    \${statusContent}
+
+                    \${doc.reviewedAt ? `
+                        <p>
+                            <strong>Reviewed At:</strong>
+                            \${escapeHtml(doc.reviewedAt.replace("T", " "))}
+                        </p>
+                    ` : ""}
+
+                </div>
+            `;
+
+        }).join("");
+
+
+        // SERVER-SIDE PAGINATION
+
+        if (documentApplicationsTotalPages > 1) {
+
+            pagination.style.display = "block";
+
+            pageInfo.textContent =
+                "Page " + (documentApplicationsCurrentPage + 1)
+                + " of " + documentApplicationsTotalPages
+                + " | Total applications: "
+                + documentApplicationsTotalElements;
+
+            document.getElementById(
+                "previousDocumentApplicationsPage"
+            ).disabled = documentApplicationsCurrentPage === 0;
+
+            document.getElementById(
+                "nextDocumentApplicationsPage"
+            ).disabled =
+                documentApplicationsCurrentPage >=
+                documentApplicationsTotalPages - 1;
+
+        } else {
+
+            pagination.style.display = "none";
+        }
+    }
+
+
+    // SEARCH WHEN ENTER IS PRESSED
+    document.getElementById("documentApplicationSearch")
+        .addEventListener("keydown", function(event) {
+
+            if (event.key === "Enter") {
+                event.preventDefault();
+                searchDocumentApplications();
+            }
+        });
+
+
+    // FILTER WHEN STATUS CHANGES
+    document.getElementById("documentApplicationStatus")
+        .addEventListener("change", function() {
+
+            documentApplicationsCurrentPage = 0;
+
+            loadDocumentApplications();
+        });
+
+
+    // RE-UPLOAD AGAINST THE SAME DOCUMENT RECORD
+    async function reuploadRejectedDocument(id) {
+
+        const input = document.getElementById("replacement-" + id);
+
+        if (!input) {
+            alert("Unable to find the document upload field.");
+            return;
+        }
+
+        const file = input.files[0];
+
+        if (!file) {
+            alert("Please select the corrected document.");
+            return;
+        }
+
+        const allowedTypes = [
+            "application/pdf",
+            "image/jpeg",
+            "image/png"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            alert("Only PDF, JPG and PNG files are allowed.");
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("File size must not exceed 5 MB.");
+            return;
+        }
+
+        const formData = new FormData();
+
+        formData.append("document", file);
+
+        const csrfToken =
+            document.querySelector('meta[name="csrf-token"]').content;
+
+        try {
+
+            const response = await fetch(
+                API + "/id-documents/" + id + "/reupload",
+                {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": csrfToken
+                    },
+                    credentials: "same-origin",
+                    body: formData
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message || "Document re-upload failed."
+                );
+            }
+
+            alert(
+                result.message ||
+                "Document re-uploaded successfully. Waiting for Bank Manager verification."
+            );
+
+            await loadDocumentApplications();
+
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+
+    // INITIALIZE DASHBOARD
     loadLoggedInEmployeeName();
+    loadDocumentApplications();
 
 </script>
 
 </body>
 </html>
-

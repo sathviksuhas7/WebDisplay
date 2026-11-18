@@ -1,4 +1,3 @@
-
 package com.epdcl.webdisplay.entity;
 
 import jakarta.persistence.*;
@@ -42,16 +41,42 @@ public class SupportTicket {
     @Column(name = "customer_remarks", columnDefinition = "TEXT")
     private String customerRemarks;
 
+    @Column(name = "employee_updates", columnDefinition = "TEXT")
+    private String employeeUpdates;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "sla_deadline", nullable = false)
+    private LocalDateTime slaDeadline;
+
+    @Column(name = "is_escalated", nullable = false)
+    private boolean escalated = false;
+
+    @Column(name = "escalated_at")
+    private LocalDateTime escalatedAt;
+
+    @Column(name = "conversation_ended", nullable = false)
+    private boolean conversationEnded = false;
+
+    @Column(name = "conversation_ended_at")
+    private LocalDateTime conversationEndedAt;
+
+    @Column(name = "conversation_ended_by", length = 120)
+    private String conversationEndedBy;
+
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+
+        if (updatedAt == null) {
+            updatedAt = createdAt;
+        }
     }
 
     @PreUpdate
@@ -127,19 +152,83 @@ public class SupportTicket {
         this.resolutionRemarks = resolutionRemarks;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
     public String getCustomerRemarks() {
         return customerRemarks;
     }
 
     public void setCustomerRemarks(String customerRemarks) {
         this.customerRemarks = customerRemarks;
+    }
+
+    public String getEmployeeUpdates() {
+        return employeeUpdates;
+    }
+
+    public void setEmployeeUpdates(String employeeUpdates) {
+        this.employeeUpdates = employeeUpdates;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getSlaDeadline() {
+        return slaDeadline;
+    }
+
+    public void setSlaDeadline(LocalDateTime slaDeadline) {
+        this.slaDeadline = slaDeadline;
+    }
+
+    public boolean isConversationEnded() {
+        return conversationEnded;
+    }
+
+    public void setConversationEnded(boolean conversationEnded) {
+        this.conversationEnded = conversationEnded;
+    }
+
+    public LocalDateTime getConversationEndedAt() {
+        return conversationEndedAt;
+    }
+
+    public void setConversationEndedAt(LocalDateTime conversationEndedAt) {
+        this.conversationEndedAt = conversationEndedAt;
+    }
+
+    public String getConversationEndedBy() {
+        return conversationEndedBy;
+    }
+
+    public void setConversationEndedBy(String conversationEndedBy) {
+        this.conversationEndedBy = conversationEndedBy;
+    }
+
+    public boolean isEscalated() {
+        return escalated;
+    }
+
+    public void setEscalated(boolean escalated) {
+        this.escalated = escalated;
+    }
+
+    public LocalDateTime getEscalatedAt() {
+        return escalatedAt;
+    }
+
+    public void setEscalatedAt(LocalDateTime escalatedAt) {
+        this.escalatedAt = escalatedAt;
     }
 }

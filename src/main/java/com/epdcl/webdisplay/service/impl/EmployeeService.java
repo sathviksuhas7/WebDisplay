@@ -13,7 +13,8 @@ public interface EmployeeService {
             String employeeName,
             String department,
             String designation,
-            String phone
+            String phone,
+            String employeeType
     );
 
     List<Employee> getAllEmployees();
@@ -23,6 +24,7 @@ public interface EmployeeService {
             String employeeName,
             String department,
             String designation,
-            String phone
+            String phone,
+            String employeeType
     );
 }
