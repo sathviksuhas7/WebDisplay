@@ -10,6 +10,7 @@ import com.epdcl.webdisplay.repo.CustomerRepository;
 import com.epdcl.webdisplay.repo.ProfileOtpChallengeRepository;
 import com.epdcl.webdisplay.entity.ProfileOtpChallenge;
 import com.epdcl.webdisplay.service.impl.ProfileOtpService;
+import com.epdcl.webdisplay.service.security.DocumentSecurityService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -46,6 +47,7 @@ public class CustomerAddressChangeController {
     private final ProfileOtpChallengeRepository otpRepository;
     private final AuditService auditService;
     private final Path uploadDirectory;
+    private final DocumentSecurityService documentSecurityService;
 
     public CustomerAddressChangeController(
             CustomerRepository customerRepository,
@@ -53,7 +55,10 @@ public class CustomerAddressChangeController {
             ProfileOtpService otpService,
             ProfileOtpChallengeRepository otpRepository,
             AuditService auditService,
+            DocumentSecurityService documentSecurityService,
             @Value("${app.document.upload-dir}") String uploadDirectory) {
+
+        this.documentSecurityService = documentSecurityService;
 
         this.customerRepository = customerRepository;
         this.requestRepository = requestRepository;
@@ -142,9 +147,18 @@ public class CustomerAddressChangeController {
                     "This OTP was not issued for your registered phone address verification.");
         }
 
-        otpService.verifyOtp(user.getId(), challengeId, otp);
+        // Check the proof file first (format, structure, antivirus) so a bad
+        // file does not use up the customer's OTP.
+        validateProof(proof);
+        DocumentSecurityService.ValidatedDocument validated =
+                documentSecurityService.validateAndScan(proof);
+        String extension = switch (validated.contentType()) {
+            case "application/pdf" -> "pdf";
+            case "image/png" -> "png";
+            default -> "jpg";
+        };
 
-        String extension = validateProof(proof);
+        otpService.verifyOtp(user.getId(), challengeId, otp);
         Files.createDirectories(uploadDirectory);
 
         String storedName = UUID.randomUUID() + "." + extension;
@@ -154,13 +168,8 @@ public class CustomerAddressChangeController {
             throw new IllegalArgumentException("Invalid proof file.");
         }
 
-        try (InputStream input = proof.getInputStream();
-             OutputStream output = Files.newOutputStream(
-                     destination,
-                     StandardOpenOption.CREATE_NEW,
-                     StandardOpenOption.WRITE)) {
-            input.transferTo(output);
-        }
+        Files.write(destination, validated.bytes(),
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
 
         CustomerAddressChangeRequest change =
                 new CustomerAddressChangeRequest();

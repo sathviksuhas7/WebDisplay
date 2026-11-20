@@ -390,6 +390,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // Edit Account
+    @Audited(
+            action = "ACCOUNT_UPDATED",
+            details = "Bank account details were updated"
+    )
     @Override
     public AccountDto updateAccount(
             Long id,

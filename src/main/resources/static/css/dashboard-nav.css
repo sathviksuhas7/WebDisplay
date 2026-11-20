@@ -1,0 +1,70 @@
+/* Dashboard tab bar (see dashboard-nav.js) */
+.wd-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    margin: 4px 0 18px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid #dbe3ee;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.wd-tabs-list {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.wd-tabs-list::-webkit-scrollbar { display: none; }
+
+.wd-tabs .wd-tab {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #334155;
+    font: inherit;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: none;
+    width: auto;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.wd-tabs .wd-tab:hover { background: #eef3fa; color: #0f2a4d; }
+.wd-tabs .wd-tab.active { background: #17345d; color: #ffffff; }
+.wd-tabs .wd-tab:focus-visible { outline: 3px solid #93c5fd; outline-offset: 1px; }
+.wd-tabs .wd-tab[hidden] { display: none; }
+
+.wd-tab-hidden { display: none !important; }
+
+/* Sections inside a tab fade in softly */
+.wd-tab-panel:not(.wd-tab-hidden) { animation: wd-fade 0.18s ease-out; }
+@keyframes wd-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .wd-tab-panel:not(.wd-tab-hidden) { animation: none; } }
+
+@media (max-width: 640px) {
+    .wd-tabs { border-radius: 10px; margin: 0 0 12px; }
+    .wd-tabs .wd-tab { padding: 9px 13px; font-size: 14px; }
+}
+
+/* Dark theme */
+html.dark-theme .wd-tabs {
+    background: rgba(19, 28, 46, 0.92);
+    border-color: #2c3b55;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+html.dark-theme .wd-tabs .wd-tab { background: transparent !important; color: #c5d3e8 !important; }
+html.dark-theme .wd-tabs .wd-tab:hover { background: #22304a !important; color: #ffffff !important; }
+html.dark-theme .wd-tabs .wd-tab.active { background: #3b82f6 !important; color: #ffffff !important; }
+
+/* Keep headings visible below the sticky tab bar when the page scrolls to them */
+.wd-tab-panel, .wd-tab-panel * { scroll-margin-top: 84px; }

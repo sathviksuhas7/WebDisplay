@@ -181,9 +181,18 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-theme.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/numeric-inputs.css">
+    <script src="${pageContext.request.contextPath}/js/site-theme.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <script src="${pageContext.request.contextPath}/js/numeric-inputs.js" defer></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/dashboard-nav.css">
+    <script src="${pageContext.request.contextPath}/js/dashboard-nav.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/session-guard.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/password-toggle.css">
+    <script src="${pageContext.request.contextPath}/js/password-toggle.js" defer></script>
 </head>
 
-<body>
+<body data-dashboard="admin">
 
 <header>
     <h2>Admin Dashboard</h2>
@@ -205,6 +214,20 @@
 </header>
 
 <div class="container">
+
+    <!-- SITE-WIDE THEME SETTINGS -->
+    <div class="card" id="siteThemeSettings">
+        <h3>Site-Wide Appearance</h3>
+        <p>Choose the appearance used across all WebDisplay dashboards.</p>
+        <div class="form-grid">
+            <select id="siteThemeSelect" aria-label="Site theme">
+                <option value="LIGHT">Light Theme</option>
+                <option value="DARK">Dark Theme</option>
+            </select>
+            <button type="button" id="saveSiteThemeButton">Save Theme</button>
+        </div>
+        <p id="siteThemeMessage" class="message" role="status" aria-live="polite"></p>
+    </div>
 
     <!-- CREATE STAFF -->
     <div class="card">
@@ -337,7 +360,6 @@
         </div>
 
     </div>
-
 
 
 
@@ -527,6 +549,7 @@
 
         element.textContent = message;
         element.className = "message " + type;
+        element.style.display = "block";
 
     }
 
@@ -624,7 +647,7 @@
 
 
     // LOAD ALL STAFF
-    async function loadStaff() {
+    async function loadStaff(options = {}) {
 
         const container = document.getElementById("staffTableContainer");
 
@@ -633,6 +656,9 @@
             allStaff = await apiRequest(API + "/staff");
 
             filterStaff();
+            if (options.preserveMessage) {
+                document.getElementById("staffMessage").style.display = "block";
+            }
 
         } catch (error) {
 
@@ -807,61 +833,39 @@
     // UPDATE STAFF
     document.getElementById("editStaffForm")
         .addEventListener("submit", async function(event) {
-
             event.preventDefault();
 
-
             const employeeId = document.getElementById("editEmployeeId").value;
-
-
+            const form = this;
+            const saveButton = form.querySelector('button[type="submit"]');
+            const originalLabel = saveButton.textContent;
             const updatedStaff = {
-
                 employeeName: document.getElementById("editEmployeeName").value.trim(),
-
                 department: document.getElementById("editDepartment").value.trim(),
-
                 designation: document.getElementById("editDesignation").value.trim(),
-
                 phone: document.getElementById("editPhone").value.trim(),
-
                 role: document.getElementById("editRole").value,
-
                 employeeType: document.getElementById("editEmployeeType").value
-
             };
 
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
 
             try {
-
                 await apiRequest(API + "/staff/" + employeeId, {
-
                     method: "PUT",
-
                     body: JSON.stringify(updatedStaff)
-
                 });
 
-
-                showMessage(
-                    "editMessage",
-                    "Staff details updated successfully!",
-                    "success"
-                );
-
-
-                await loadStaff();
-
-
+                closeEditForm();
+                await loadStaff({ preserveMessage: true });
+                showMessage("staffMessage", "Staff details updated successfully.", "success");
             } catch (error) {
-
-                showMessage(
-                    "editMessage",
-                    error.message,
-                    "error"
-                );
-
+                showMessage("editMessage", "Unable to update staff details: " + error.message, "error");
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = originalLabel;
             }
-
         });
 
 
@@ -989,123 +993,10 @@
         loadAuditLogs(0);
     }
 
-    const ID_DOCUMENT_API =
-        "<%= request.getContextPath() %>/api/id-documents";
-
-    async function loadPendingDocuments() {
-        const container = document.getElementById("pendingDocumentsContainer");
-
-        try {
-            const response = await fetch(
-                ID_DOCUMENT_API + "/admin/pending",
-                { credentials: "same-origin" }
-            );
-
-            const documents = await response.json();
-
-            if (!response.ok) {
-                throw new Error(documents.message || "Unable to load documents.");
-            }
-
-            if (documents.length === 0) {
-                container.innerHTML = "<p>No pending ID documents.</p>";
-                return;
-            }
-
-            container.innerHTML = documents.map(function(doc) {
-                return (
-                    '<div class="document-card">' +
-                        '<h3>' + escapeHtml(doc.customerName) + '</h3>' +
-                        '<p>Customer ID: ' + escapeHtml(doc.customerId) + '</p>' +
-                        '<p>Account Number: ' + escapeHtml(doc.accountNumber) + '</p>' +
-                        '<p>Document: ' + escapeHtml(doc.fileName) + '</p>' +
-                        '<p>Status: ' + escapeHtml(doc.status) + '</p>' +
-
-                        '<button type="button" onclick="viewIdDocument(' + doc.id + ')">' +
-                            'View Document' +
-                        '</button>' +
-
-                        '<button type="button" onclick="approveIdDocument(' + doc.id + ')">' +
-                            'Approve' +
-                        '</button>' +
-
-                        '<button type="button" onclick="rejectIdDocument(' + doc.id + ')">' +
-                            'Reject' +
-                        '</button>' +
-                    '</div>'
-                );
-            }).join("");
-
-        } catch (error) {
-            container.innerHTML = "";
-            showMessage("documentMessage", error.message, true);
-        }
-    }
-
-
-    function viewIdDocument(id) {
-        window.open(
-            ID_DOCUMENT_API + "/admin/" + id + "/file",
-            "_blank"
-        );
-    }
-
-    async function approveIdDocument(id) {
-        if (!confirm("Approve this ID document and activate the account?")) {
-            return;
-        }
-
-        await updateIdDocument(id, "approve");
-    }
-
-    async function rejectIdDocument(id) {
-        const reason = prompt("Enter the reason for rejection:");
-
-        if (!reason || !reason.trim()) {
-            return;
-        }
-
-        await updateIdDocument(id, "reject", { reason: reason.trim() });
-    }
-
-    async function updateIdDocument(id, action, body = {}) {
-        const csrfToken =
-            document.querySelector('meta[name="csrf-token"]').content;
-
-        try {
-            const response = await fetch(
-                ID_DOCUMENT_API + "/admin/" + id + "/" + action,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": csrfToken
-                    },
-                    credentials: "same-origin",
-                    body: JSON.stringify(body)
-                }
-            );
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || "Operation failed.");
-            }
-
-            showMessage("documentMessage", result.message);
-            await loadPendingDocuments();
-
-        } catch (error) {
-            showMessage("documentMessage", error.message, true);
-        }
-    }
-
-
     // LOAD DASHBOARD DATA
     window.addEventListener("DOMContentLoaded", function() {
         loadStaff();
         loadAuditLogs(0);
-        loadPendingDocuments();
     });
 
 </script>

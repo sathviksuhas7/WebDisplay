@@ -4,6 +4,7 @@ import com.epdcl.webdisplay.dto.AccountDto;
 import com.epdcl.webdisplay.entity.*;
 import com.epdcl.webdisplay.repo.*;
 import com.epdcl.webdisplay.audit.annotation.Audited;
+import com.epdcl.webdisplay.service.security.DocumentSecurityService;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -33,6 +34,7 @@ public class CustomerIdDocumentService {
     private final AccountRepository accountRepository;
     private final AccountService accountService;
     private final Path uploadDirectory;
+    private final DocumentSecurityService documentSecurityService;
 
 
     public CustomerIdDocumentService(
@@ -40,12 +42,14 @@ public class CustomerIdDocumentService {
             CustomerRepository customerRepository,
             AccountRepository accountRepository,
             AccountService accountService,
+            DocumentSecurityService documentSecurityService,
             @Value("${app.document.upload-dir}") String uploadDir) {
 
         this.documentRepository = documentRepository;
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
         this.accountService = accountService;
+        this.documentSecurityService = documentSecurityService;
         this.uploadDirectory = Paths.get(uploadDir).toAbsolutePath().normalize();
 
 
@@ -67,7 +71,7 @@ public class CustomerIdDocumentService {
             MultipartFile file,
             Long uploadedByUserId) throws IOException {
 
-        validateFile(file);
+        DocumentSecurityService.ValidatedDocument validated = documentSecurityService.validateAndScan(file);
 
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
@@ -102,15 +106,14 @@ public class CustomerIdDocumentService {
             throw new RuntimeException("Invalid file path");
         }
 
-        Files.copy(file.getInputStream(), destination,
-                StandardCopyOption.REPLACE_EXISTING);
+        Files.write(destination, validated.bytes(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
 
         CustomerIdDocument document = new CustomerIdDocument();
         document.setCustomer(customer);
         document.setAccount(account);
         document.setOriginalFileName(originalName);
         document.setStoredFileName(storedName);
-        document.setContentType(file.getContentType());
+        document.setContentType(validated.contentType());
         document.setFilePath(destination.toString());
         document.setVerificationStatus("PENDING");
         document.setUploadedByUserId(uploadedByUserId);
@@ -127,7 +130,7 @@ public class CustomerIdDocumentService {
             MultipartFile file,
             Long uploadedByUserId) throws IOException {
 
-        validateFile(file);
+        DocumentSecurityService.ValidatedDocument validated = documentSecurityService.validateAndScan(file);
 
         CustomerIdDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() ->
@@ -161,13 +164,12 @@ public class CustomerIdDocumentService {
             throw new RuntimeException("Invalid file path");
         }
 
-        Files.copy(file.getInputStream(), destination,
-                StandardCopyOption.REPLACE_EXISTING);
+        Files.write(destination, validated.bytes(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
 
         // Update the EXISTING document record.
         document.setOriginalFileName(originalName);
         document.setStoredFileName(storedName);
-        document.setContentType(file.getContentType());
+        document.setContentType(validated.contentType());
         document.setFilePath(destination.toString());
         document.setVerificationStatus("PENDING");
         document.setRejectionReason(null);
@@ -177,31 +179,6 @@ public class CustomerIdDocumentService {
         documentRepository.save(document);
     }
 
-
-    private void validateFile(MultipartFile file) {
-
-        if (file == null || file.isEmpty()) {
-            throw new RuntimeException("Please upload an ID document");
-        }
-
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new RuntimeException("File size must not exceed 5 MB");
-        }
-
-        String name = file.getOriginalFilename();
-
-        if (name == null || !name.matches("(?i).+\\.(pdf|jpg|jpeg|png)$")) {
-            throw new RuntimeException("Only PDF, JPG, JPEG and PNG files are allowed");
-        }
-
-        String type = file.getContentType();
-
-        if (type == null || !List.of(
-                "application/pdf", "image/jpeg", "image/png"
-        ).contains(type)) {
-            throw new RuntimeException("Invalid document file type");
-        }
-    }
 
     public List<CustomerIdDocument> getPendingDocuments() {
         return documentRepository

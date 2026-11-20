@@ -265,10 +265,35 @@
             .daily-ticket-day { font-size: 10px; }
         }
 
+
+        /* Raise a ticket for a customer */
+        .rt-customer { margin: 12px 0 16px; padding: 12px 14px; border-radius: 10px; background: #eef4ff; border: 1px solid #c7d7f5; color: #17345d; }
+        .rt-customer.rt-empty { background: #f8fafc; border-style: dashed; border-color: #cbd5e1; color: #475569; }
+        .rt-customer .rt-change { margin-left: 10px; padding: 4px 10px; font-size: 13px; }
+        .rt-fields { border: 0; margin: 0; padding: 0; min-width: 0; }
+        .rt-fields[disabled] { opacity: 0.55; }
+        .rt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .rt-grid select { width: 100%; }
+        .rt-fields label { display: block; margin-top: 10px; font-weight: 600; }
+        .rt-fields input, .rt-fields textarea { width: 100%; box-sizing: border-box; }
+        .rt-req { color: #dc2626; }
+        .rt-message:empty { display: none; }
+        .rt-message.success { background: #f0fdf4; color: #166534; padding: 10px 12px; border-radius: 8px; }
+        .rt-message.error { background: #fef2f2; color: #b91c1c; padding: 10px 12px; border-radius: 8px; }
+        .rt-raise-btn { margin-top: 10px; }
+        html.dark-theme .rt-customer { background: #172a46 !important; border-color: #2f4c78 !important; color: #dbeafe !important; }
+        html.dark-theme .rt-customer.rt-empty { background: #131c2e !important; border-color: #33445f !important; color: #9fb0c8 !important; }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-theme.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/numeric-inputs.css">
+    <script src="${pageContext.request.contextPath}/js/site-theme.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <script src="${pageContext.request.contextPath}/js/numeric-inputs.js" defer></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/dashboard-nav.css">
+    <script src="${pageContext.request.contextPath}/js/dashboard-nav.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/session-guard.js" data-context-path="${pageContext.request.contextPath}"></script>
 </head>
 
-<body>
+<body data-dashboard="helpdesk">
 
 <header>
     <h1>Helpdesk Customer Care Portal</h1>
@@ -336,7 +361,7 @@
     </div>
 
     <div class="section">
-        <h2>1. Customer Search</h2>
+        <h2>Customer Search</h2>
         <input type="text" id="searchName" placeholder="Customer name">
         <input type="text" id="searchPhone" placeholder="Phone number">
         <button onclick="searchCustomers()">Search Customer</button>
@@ -344,21 +369,73 @@
     </div>
 
     <div class="section">
-        <h2>2. Customer Details</h2>
+        <h2>Customer Details</h2>
         <div id="customerDetails" class="result">
             <p class="muted">Select a customer from the search results.</p>
         </div>
     </div>
 
+    <div class="section" id="createTicketForCustomerSection">
+        <h2>Raise a Ticket for a Customer</h2>
+        <p class="muted">Use this when a customer calls or visits the branch. The ticket is created in the customer's name and they can follow it from their own dashboard.</p>
+
+        <div id="ticketForCustomerSelected" class="rt-customer rt-empty">
+            No customer selected yet — search for the customer above and click <b>Select</b>.
+        </div>
+
+        <fieldset id="raiseTicketFields" class="rt-fields" disabled>
+            <div class="rt-grid">
+                <div>
+                    <label for="phoneTicketChannel">Customer contacted us by</label>
+                    <select id="phoneTicketChannel">
+                        <option value="PHONE_CALL">Phone call</option>
+                        <option value="BRANCH_VISIT">Branch visit</option>
+                        <option value="EMAIL">Email</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="phoneTicketCategory">Category</label>
+                    <select id="phoneTicketCategory">
+                        <option value="ACCOUNT">Account Issue</option>
+                        <option value="TRANSACTION">Transaction Issue</option>
+                        <option value="LOGIN">Login Issue</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="phoneTicketPriority">Priority</label>
+                    <select id="phoneTicketPriority">
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM" selected>Medium</option>
+                        <option value="HIGH">High</option>
+                        <option value="URGENT">Urgent</option>
+                    </select>
+                </div>
+            </div>
+
+            <label for="phoneTicketSubject">Subject <span class="rt-req">*</span></label>
+            <input id="phoneTicketSubject" type="text" maxlength="200" placeholder="e.g. Money debited but transfer failed">
+
+            <label for="phoneTicketDescription">Customer's issue <span class="rt-req">*</span></label>
+            <textarea id="phoneTicketDescription" maxlength="4000" rows="4" placeholder="Write the problem as the customer explained it"></textarea>
+
+            <label for="phoneTicketRemarks">Additional remarks (optional)</label>
+            <textarea id="phoneTicketRemarks" maxlength="2000" rows="2" placeholder="Reference numbers, best time to call back, etc."></textarea>
+
+            <button type="button" id="createPhoneTicketButton" onclick="createTicketForSelectedCustomer()">Create Ticket for Customer</button>
+        </fieldset>
+        <p id="phoneTicketMessage" class="message rt-message" role="status"></p>
+    </div>
+
     <div class="section">
-        <h2>3. Account Information</h2>
+        <h2>Account Information</h2>
         <div id="accountResults" class="result">
             <p class="muted">Select a customer to view account information.</p>
         </div>
     </div>
 
     <div class="section">
-        <h2>4. Transaction Investigation</h2>
+        <h2>Transaction Investigation</h2>
         <div id="transactionResults" class="result">
             <p class="muted">Select a customer to investigate transactions.</p>
         </div>
@@ -366,7 +443,7 @@
 
     <!-- TICKET FILTERS -->
     <div class="section" id="ticketFilterSection">
-        <h2>5. Filter Support Tickets</h2>
+        <h2>Filter Support Tickets</h2>
 
         <select id="filterStatus" onchange="clearFilteredTickets()">
             <option value="">Select Status</option>
@@ -401,28 +478,28 @@
 
 
     <div class="section" id="newTicketsSection">
-        <h2>6. New Tickets</h2>
+        <h2>New Tickets</h2>
         <p>Customer tickets waiting for their first assignment.</p>
         <button onclick="loadNewTickets()">Refresh New Tickets</button>
         <div id="newTickets" class="result">Loading new tickets...</div>
     </div>
 
     <div class="section" id="allTicketsSection">
-        <h2>7. All Other Tickets</h2>
+        <h2>All Other Tickets</h2>
         <button onclick="loadAllTickets()">Refresh All Tickets</button>
         <div id="allTickets" class="result">Loading tickets...</div>
     </div>
 
 
     <div class="section" id="myTicketsSection">
-        <h2>7. My Assigned Tickets</h2>
+        <h2>My Assigned Tickets</h2>
         <button onclick="loadMyTickets()">Refresh My Tickets</button>
         <div id="myTickets" class="result">Loading assigned tickets...</div>
     </div>
 
 
     <div class="section" id="employeeTicketSection">
-        <h2>8. Work on Assigned Ticket</h2>
+        <h2>Work on Assigned Ticket</h2>
 
         <p class="muted">
             Send progress updates to customers and submit completed work
@@ -469,7 +546,7 @@
 
 
     <div class="section" id="managerReviewSection">
-        <h2>10. Manager Ticket Review</h2>
+        <h2>Manager Ticket Review</h2>
         <p class="muted">
             Review tickets submitted by employees. Close approved tickets
             or return tickets for further investigation.
@@ -479,7 +556,7 @@
     </div>
 
     <div class="section" id="investigationSection">
-        <h2>11. Investigation History</h2>
+        <h2>Investigation History</h2>
         <input type="text"
                id="remarkTicketId"
                inputmode="numeric"
@@ -548,9 +625,11 @@
 </div>
 
 <script>
+
     const api = "<%= request.getContextPath() %>/api";
     let currentDesignation = "";
     let helpdeskEmployees = [];
+    let selectedHelpdeskCustomerId = null;
 
     async function apiRequest(url, options = {}) {
         const csrfElement = document.querySelector('meta[name="csrf-token"]');
@@ -680,17 +759,106 @@
             const customer = await apiRequest(
                 "/helpdesk/customers/" + customerId
             );
+            selectedHelpdeskCustomerId = Number(customer.customerId || customerId);
 
             document.getElementById("customerDetails").innerHTML =
                 "<p><b>Customer ID:</b> " + escapeHtml(customer.customerId) + "</p>" +
                 "<p><b>Name:</b> " + escapeHtml(customer.customerName) + "</p>" +
                 "<p><b>Phone:</b> " + escapeHtml(customer.phone) + "</p>" +
-                "<p><b>Address:</b> " + escapeHtml(customer.address) + "</p>";
+                "<p><b>Address:</b> " + escapeHtml(customer.address) + "</p>" +
+                "<button type=\"button\" class=\"rt-raise-btn\" onclick=\"openRaiseTicketForm()\">Raise a ticket for this customer</button>";
 
+            showRaiseTicketCustomer(customer);
             await loadCustomerAccounts(customerId);
             await loadCustomerTransactions(customerId);
         } catch (error) {
             alert("Unable to load customer: " + error.message);
+        }
+    }
+
+    function showRaiseTicketCustomer(customer) {
+        const box = document.getElementById("ticketForCustomerSelected");
+        box.classList.remove("rt-empty");
+        box.innerHTML = "Raising ticket for <b>" + escapeHtml(customer.customerName || "Customer") +
+            "</b> (Customer ID " + escapeHtml(customer.customerId) + ")" +
+            (customer.phone ? " · " + escapeHtml(customer.phone) : "");
+        document.getElementById("raiseTicketFields").disabled = false;
+        const message = document.getElementById("phoneTicketMessage");
+        message.textContent = "";
+        message.className = "message rt-message";
+    }
+
+    function openRaiseTicketForm() {
+        const field = document.getElementById("phoneTicketSubject");
+        document.getElementById("createTicketForCustomerSection")
+            .scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(function () { field.focus({ preventScroll: true }); }, 300);
+    }
+
+    async function createTicketForSelectedCustomer() {
+        const message = document.getElementById("phoneTicketMessage");
+        const button = document.getElementById("createPhoneTicketButton");
+
+        function show(text, type) {
+            message.textContent = text;
+            message.className = "message rt-message " + type;
+            message.style.display = "block";
+        }
+
+        if (!selectedHelpdeskCustomerId) {
+            show("Search for the customer and click Select first.", "error");
+            return;
+        }
+
+        const subject = document.getElementById("phoneTicketSubject").value.trim();
+        const description = document.getElementById("phoneTicketDescription").value.trim();
+
+        if (!subject || !description) {
+            show("Please fill in the subject and the customer's issue.", "error");
+            (subject ? document.getElementById("phoneTicketDescription")
+                     : document.getElementById("phoneTicketSubject")).focus();
+            return;
+        }
+
+        const label = button.textContent;
+        button.disabled = true;
+        button.textContent = "Creating ticket...";
+
+        try {
+            const channel = document.getElementById("phoneTicketChannel").value;
+            const created = await apiRequest(
+                "/helpdesk/customers/" + selectedHelpdeskCustomerId +
+                "/tickets?channel=" + encodeURIComponent(channel), {
+                method: "POST",
+                body: JSON.stringify({
+                    category: document.getElementById("phoneTicketCategory").value,
+                    priority: document.getElementById("phoneTicketPriority").value,
+                    subject: subject,
+                    description: description,
+                    customerRemarks: document.getElementById("phoneTicketRemarks").value.trim()
+                })
+            });
+
+            show("Ticket #" + created.ticketId + " created for the customer. Share this ticket number with them.", "success");
+            document.getElementById("phoneTicketSubject").value = "";
+            document.getElementById("phoneTicketDescription").value = "";
+            document.getElementById("phoneTicketRemarks").value = "";
+            document.getElementById("phoneTicketPriority").value = "MEDIUM";
+
+            // Refresh the lists this user can see.
+            try {
+                await loadTicketStatistics();
+                if (currentDesignation === "HELPDESK_MANAGER") {
+                    await Promise.all([loadNewTickets(), loadAllTickets()]);
+                }
+            } catch (refreshError) {
+                console.warn("Ticket lists could not be refreshed:", refreshError);
+            }
+        } catch (error) {
+            show("Unable to create the ticket: " + error.message, "error");
+        } finally {
+            button.disabled = false;
+            button.textContent = label;
         }
     }
 
@@ -788,9 +956,16 @@
         const deadline = parseSlaDate(ticket.slaDeadline);
         if (!deadline) return '<span class="muted">Not available</span>';
         const overdue = Date.now() > deadline.getTime();
+        const escalationDate = ticket.escalatedAt ? parseSlaDate(ticket.escalatedAt) : null;
+        const escalationHtml = ticket.escalated
+            ? '<div class="sla-escalated-at">Escalated at: ' +
+                escapeHtml(escalationDate ? escalationDate.toLocaleString() : 'Timestamp unavailable') +
+              '</div>'
+            : '';
         return '<div class="sla-cell"><div>' + escapeHtml(deadline.toLocaleString()) + '</div>' +
             '<small class="sla-countdown ' + (overdue ? 'sla-overdue' : 'sla-safe') + '" data-deadline="' +
-            deadline.getTime() + '">' + (overdue ? 'OVERDUE' : 'Calculating...') + '</small></div>';
+            deadline.getTime() + '">' + (overdue ? 'OVERDUE' : 'Calculating...') + '</small>' +
+            escalationHtml + '</div>';
     }
 
     function updateSlaCountdowns() {

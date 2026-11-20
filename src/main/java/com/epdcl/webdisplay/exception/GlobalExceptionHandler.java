@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
@@ -48,6 +49,31 @@ public class GlobalExceptionHandler {
                 errorDetails,
                 HttpStatus.NOT_FOUND
         );
+    }
+
+    // Validation problems (bad upload, invalid theme, etc.) are the user's
+    // input, not a server crash: answer 400 with the readable message.
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorDetails> handleIllegalArgument(
+            IllegalArgumentException exception,
+            WebRequest webRequest) {
+
+        return new ResponseEntity<>(
+                new ErrorDetails(LocalDateTime.now(), exception.getMessage(),
+                        webRequest.getDescription(false), "INVALID_REQUEST"),
+                HttpStatus.BAD_REQUEST);
+    }
+
+    // Keep the status chosen by controllers (401, 403, ...) instead of turning it into 500.
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorDetails> handleResponseStatus(
+            ResponseStatusException exception,
+            WebRequest webRequest) {
+
+        return new ResponseEntity<>(
+                new ErrorDetails(LocalDateTime.now(), exception.getReason(),
+                        webRequest.getDescription(false), "REQUEST_REJECTED"),
+                exception.getStatusCode());
     }
 
     // Handle generic exceptions (500)

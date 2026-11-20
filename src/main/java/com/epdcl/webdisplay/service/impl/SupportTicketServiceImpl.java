@@ -246,6 +246,7 @@ public class SupportTicketServiceImpl implements SupportTicketService {
     // ---------------------------------------------------------
 
     @Override
+    @Audited(action = "SUPPORT_TICKET_CREATED", details = "Support ticket created for a customer")
     @Transactional
     public SupportTicketDto createTicket(
             Long customerId, SupportTicketDto dto) {
@@ -307,6 +308,36 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         );
 
         return mapToCustomerDto(savedTicket);
+    }
+
+    @Override
+    @Transactional
+    public SupportTicketDto createTicketOnBehalf(
+            Long customerId, SupportTicketDto dto, Long helpdeskUserId, String channel) {
+
+        Employee helpdeskEmployee = getHelpdeskEmployee(helpdeskUserId);
+
+        String safeChannel = switch (channel == null ? "" : channel.trim().toUpperCase()) {
+            case "BRANCH_VISIT" -> "Branch visit";
+            case "EMAIL" -> "Email";
+            default -> "Phone call";
+        };
+
+        // Reuse the normal customer ticket rules (validation, priority, SLA, first message).
+        SupportTicketDto created = createTicket(customerId, dto);
+
+        SupportTicket ticket = ticketRepository.findById(created.getTicketId())
+                .orElseThrow(() -> new AccountException("Ticket not found"));
+
+        saveConversationMessage(
+                ticket,
+                "HELPDESK",
+                helpdeskEmployee.getEmployeeName(),
+                "Ticket raised on behalf of the customer by "
+                        + helpdeskEmployee.getEmployeeName()
+                        + " (" + safeChannel + ").");
+
+        return created;
     }
 
     @Override

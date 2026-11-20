@@ -1,0 +1,238 @@
+/* =====================================================================
+   WebDisplay site-wide dark theme.
+   Active when the Admin selects "Dark" (class "dark-theme" on <html>).
+   Light mode is each page's original design and is not changed here.
+   ===================================================================== */
+
+html.dark-theme {
+    --wd-bg: #0b1220;
+    --wd-surface: #131c2e;
+    --wd-surface-2: #1a2539;
+    --wd-surface-3: #22304a;
+    --wd-border: #2c3b55;
+    --wd-text: #e5ecf6;
+    --wd-text-strong: #ffffff;
+    --wd-muted: #9fb0c8;
+    --wd-link: #8cc2ff;
+    --wd-accent: #3b82f6;
+    --wd-success-bg: #0f2e22;
+    --wd-success-text: #86efac;
+    --wd-error-bg: #3a1418;
+    --wd-error-text: #fca5a5;
+    --wd-warn-bg: #3a2a0c;
+    --wd-warn-text: #fcd34d;
+    --wd-info-bg: #10243f;
+    --wd-info-text: #93c5fd;
+    color-scheme: dark;
+    background: var(--wd-bg);
+}
+
+/* ---------- Page and text ---------- */
+html.dark-theme body {
+    background: var(--wd-bg) !important;
+    color: var(--wd-text) !important;
+}
+
+html.dark-theme h1, html.dark-theme h2, html.dark-theme h3,
+html.dark-theme h4, html.dark-theme h5, html.dark-theme h6,
+html.dark-theme .section h2, html.dark-theme .welcome h1,
+html.dark-theme .conversation-panel h3, html.dark-theme .document-card h3,
+html.dark-theme .feature h3 {
+    color: var(--wd-text-strong) !important;
+}
+
+html.dark-theme p, html.dark-theme label, html.dark-theme li,
+html.dark-theme span, html.dark-theme td, html.dark-theme dt,
+html.dark-theme dd, html.dark-theme legend, html.dark-theme strong,
+html.dark-theme b, html.dark-theme summary, html.dark-theme figcaption {
+    color: inherit;
+}
+
+html.dark-theme small, html.dark-theme .muted, html.dark-theme .empty,
+html.dark-theme .empty-message, html.dark-theme .conversation-empty,
+html.dark-theme .stat-card h3, html.dark-theme .txn-ref,
+html.dark-theme .acc-no, html.dark-theme .sla-closed,
+html.dark-theme .daily-ticket-day, html.dark-theme .result-message,
+html.dark-theme .conversation-message .meta,
+html.dark-theme .conversation-list .conversation-message small,
+html.dark-theme .info-card p, html.dark-theme .account-card p,
+html.dark-theme .card p, html.dark-theme .txn-table th {
+    color: var(--wd-muted) !important;
+}
+
+html.dark-theme a { color: var(--wd-link); }
+html.dark-theme hr { border-color: var(--wd-border) !important; }
+
+/* ---------- Surfaces (cards, sections, panels) ---------- */
+html.dark-theme .container,
+html.dark-theme .login-container {
+    background: transparent !important;
+    color: var(--wd-text) !important;
+    box-shadow: none !important;
+}
+
+html.dark-theme .login-container,
+html.dark-theme .section,
+html.dark-theme .card,
+html.dark-theme .welcome,
+html.dark-theme .result,
+html.dark-theme .document-card,
+html.dark-theme .conversation-panel,
+html.dark-theme .ticket-chart-section,
+html.dark-theme .daily-ticket-chart,
+html.dark-theme .ticket-pie-chart,
+html.dark-theme .feature,
+html.dark-theme .detail-item {
+    background: var(--wd-surface) !important;
+    color: var(--wd-text) !important;
+    border-color: var(--wd-border) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* change-password page uses .container as its card */
+html.dark-theme body > .container:only-of-type:not(:has(.section)):not(:has(.card)) {
+    background: var(--wd-surface) !important;
+    border: 1px solid var(--wd-border) !important;
+}
+
+html.dark-theme .welcome { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+
+html.dark-theme .info-card,
+html.dark-theme .account-card,
+html.dark-theme .stat-card,
+html.dark-theme .recipient-box,
+html.dark-theme .conversation-list,
+html.dark-theme .empty-message,
+html.dark-theme .table-container,
+html.dark-theme .customer-update-cell {
+    background: var(--wd-surface-2) !important;
+    color: var(--wd-text) !important;
+    border-color: var(--wd-border) !important;
+}
+
+html.dark-theme .stat-card p,
+html.dark-theme .daily-ticket-count,
+html.dark-theme .acc-name,
+html.dark-theme .amount { color: var(--wd-text-strong) !important; }
+
+/* ---------- Header / navigation bars ---------- */
+html.dark-theme header,
+html.dark-theme nav {
+    background: #0a1324 !important;
+    color: var(--wd-text) !important;
+    border-color: var(--wd-border) !important;
+}
+html.dark-theme header h1, html.dark-theme header h2,
+html.dark-theme header a, html.dark-theme .logo,
+html.dark-theme nav a, html.dark-theme nav button { color: var(--wd-text-strong) !important; }
+html.dark-theme nav button { background: transparent !important; }
+html.dark-theme nav button:hover, html.dark-theme nav button.active {
+    background: var(--wd-surface-3) !important;
+    color: var(--wd-link) !important;
+}
+
+/* ---------- Form controls ---------- */
+html.dark-theme input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+html.dark-theme select,
+html.dark-theme textarea {
+    background: #0d1626 !important;
+    color: var(--wd-text-strong) !important;
+    border: 1px solid #3a4a66 !important;
+}
+html.dark-theme input:focus, html.dark-theme select:focus, html.dark-theme textarea:focus {
+    border-color: var(--wd-accent) !important;
+    outline: 2px solid rgba(59, 130, 246, 0.35) !important;
+    outline-offset: 0;
+}
+html.dark-theme input::placeholder, html.dark-theme textarea::placeholder { color: #7186a5 !important; }
+html.dark-theme input:disabled, html.dark-theme select:disabled,
+html.dark-theme textarea:disabled, html.dark-theme input[readonly] {
+    background: #18233a !important;
+    color: var(--wd-muted) !important;
+}
+html.dark-theme input[type="file"]::file-selector-button {
+    background: var(--wd-surface-3);
+    color: var(--wd-text);
+    border: 1px solid var(--wd-border);
+}
+html.dark-theme option { background: #0d1626; color: var(--wd-text); }
+
+/* Neutral/light buttons become dark; coloured action buttons keep their colour. */
+html.dark-theme .secondary, html.dark-theme .hero-btn, html.dark-theme .cta,
+html.dark-theme .close-button, html.dark-theme .return-button {
+    background: var(--wd-surface-3) !important;
+    color: var(--wd-text-strong) !important;
+    border: 1px solid var(--wd-border) !important;
+}
+html.dark-theme button:disabled { opacity: 0.55; }
+
+/* ---------- Tables ---------- */
+html.dark-theme table {
+    background: var(--wd-surface) !important;
+    color: var(--wd-text) !important;
+    border-color: var(--wd-border) !important;
+}
+html.dark-theme th {
+    background: var(--wd-surface-3) !important;
+    color: var(--wd-text-strong) !important;
+    border-color: var(--wd-border) !important;
+}
+html.dark-theme td { border-color: var(--wd-border) !important; }
+html.dark-theme tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.025); }
+html.dark-theme tbody tr:hover td { background: rgba(140, 194, 255, 0.07); }
+
+/* ---------- Status messages and badges ---------- */
+html.dark-theme .message { color: var(--wd-info-text) !important; }
+html.dark-theme .message.success, html.dark-theme .success,
+html.dark-theme .success-message {
+    background: var(--wd-success-bg) !important;
+    color: var(--wd-success-text) !important;
+    border-color: #1f5a41 !important;
+}
+html.dark-theme .message.error, html.dark-theme .error,
+html.dark-theme .error-message, html.dark-theme .result-message.error {
+    background: var(--wd-error-bg) !important;
+    color: var(--wd-error-text) !important;
+    border-color: #6b2229 !important;
+}
+/* .success/.error as plain text (no box) on some pages */
+html.dark-theme span.success, html.dark-theme span.error { background: transparent !important; }
+
+html.dark-theme .badge { background: var(--wd-surface-3) !important; color: var(--wd-text) !important; }
+html.dark-theme .badge.SUCCESS { background: var(--wd-success-bg) !important; color: var(--wd-success-text) !important; }
+html.dark-theme .badge.FAILED { background: var(--wd-error-bg) !important; color: var(--wd-error-text) !important; }
+html.dark-theme .badge.PENDING { background: var(--wd-warn-bg) !important; color: var(--wd-warn-text) !important; }
+
+html.dark-theme .sla-overdue, html.dark-theme .inactive-status,
+html.dark-theme .withdrawal-type { color: var(--wd-error-text) !important; }
+html.dark-theme .sla-safe, html.dark-theme .active-status, html.dark-theme .deposit-type,
+html.dark-theme .balance, html.dark-theme .status { color: var(--wd-success-text) !important; }
+
+/* Inline badges written by JavaScript */
+html.dark-theme [style*="background:#fee2e2"], html.dark-theme [style*="background: #fee2e2"] {
+    background: var(--wd-error-bg) !important;
+    color: var(--wd-error-text) !important;
+}
+
+/* ---------- Ticket conversations ---------- */
+html.dark-theme .conversation-message.customer,
+html.dark-theme .conversation-list .conversation-message.customer {
+    background: #172a46 !important;
+    color: var(--wd-text) !important;
+    border-color: #27446d !important;
+}
+html.dark-theme .conversation-message.helpdesk,
+html.dark-theme .conversation-list .conversation-message.helpdesk {
+    background: #13302a !important;
+    color: var(--wd-text) !important;
+    border-color: #1f5143 !important;
+}
+
+/* ---------- Misc ---------- */
+html.dark-theme ::-webkit-scrollbar { width: 10px; height: 10px; }
+html.dark-theme ::-webkit-scrollbar-track { background: var(--wd-bg); }
+html.dark-theme ::-webkit-scrollbar-thumb { background: #2f3f5c; border-radius: 6px; }
+html.dark-theme img { opacity: 0.95; }
+html.dark-theme .ticket-legend-color { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15); }
+html.dark-theme .message.info { background: var(--wd-info-bg) !important; color: var(--wd-info-text) !important; }
+[hidden] { display: none !important; }

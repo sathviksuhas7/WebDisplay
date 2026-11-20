@@ -49,7 +49,10 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
                 || path.startsWith("/images/")
                 || path.startsWith("/webjars/")
                 || path.equals("/favicon.ico")
-                || path.equals("/error");
+                || path.equals("/error")
+                // Theme is a non-sensitive public setting used on the login/welcome pages too.
+                || (path.equals("/api/theme")
+                    && "GET".equalsIgnoreCase(request.getMethod()));
     }
 
     @Override
@@ -58,6 +61,11 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain)
             throws ServletException, IOException {
+
+        // Prevent protected pages and their redirects from being restored from browser cache.
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
 
         HttpSession session = request.getSession(false);
         String path = request.getServletPath();
@@ -175,6 +183,25 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
         // DEFAULT DENY FOR API REQUESTS
         boolean allowed = !path.startsWith("/api/");
+
+        // Read-only site theme setting is available to every authenticated role.
+        if (path.equals("/api/theme")
+                && HttpMethod.GET.matches(request.getMethod())) {
+            allowed = true;
+        }
+
+        // Session keep-alive / "am I still signed in?" check, used by every dashboard.
+        if (path.equals("/api/session/heartbeat")) {
+            allowed = true;
+        }
+
+        // API documentation is for administrators only.
+        if (path.equals("/swagger-ui.html")
+                || path.startsWith("/swagger-ui/")
+                || path.equals("/v3/api-docs")
+                || path.startsWith("/v3/api-docs/")) {
+            allowed = "ADMIN".equals(role);
+        }
 
         // ADMIN DASHBOARD
         if (path.equals("/admin") || path.startsWith("/admin/")) {

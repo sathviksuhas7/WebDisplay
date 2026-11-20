@@ -49,9 +49,8 @@ public class AuditAspect {
         }
 
         // Retrieve the logged-in user from your existing session
-        User user = (User) session.getAttribute("loggedInUser");
-
-        if (user == null) {
+        Object sessionValue = session.getAttribute("loggedInUser");
+        if (!(sessionValue instanceof User user)) {
             return;
         }
 

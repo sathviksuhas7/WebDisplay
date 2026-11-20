@@ -261,6 +261,10 @@
             nav button { padding: 10px; font-size: 12px; }
         }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-theme.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/numeric-inputs.css">
+    <script src="${pageContext.request.contextPath}/js/site-theme.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <script src="${pageContext.request.contextPath}/js/numeric-inputs.js" defer></script>
 </head>
 
 <body>
@@ -591,10 +595,12 @@ function addAccount() {
     button.disabled = true;
     message.innerText = "Creating account...";
 
-    fetch("/api/accounts", {
+    fetch("<%= request.getContextPath() %>/api/accounts", {
         method: "POST",
+        credentials: "same-origin",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
         },
         body: JSON.stringify({
             accountHolderName: name,
@@ -1071,7 +1077,11 @@ function changeAccountStatus(id, action) {
     }
 
     fetch(url, {
-        method: "PUT"
+        method: "PUT",
+        credentials: "same-origin",
+        headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+        }
     })
     .then(async response => {
 
@@ -1121,7 +1131,7 @@ function expireSession() {
 
     alert("Your session has expired. Please log in again.");
 
-    window.location.href = "/login?expired=true";
+    window.location.href = "<%= request.getContextPath() %>/login?expired=true";
 }
 
 
@@ -1129,8 +1139,11 @@ function expireSession() {
 
 function checkServerSession() {
 
-    return fetch("/api/session/heartbeat", {
-        method: "POST"
+    // GET needs no CSRF token; the server accepts GET and POST for this check.
+    return fetch("<%= request.getContextPath() %>/api/session/heartbeat", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store"
     })
     .then(async response => {
 
@@ -1209,7 +1222,7 @@ setInterval(() => {
 window.addEventListener("storage", event => {
 
     if (event.key === SESSION_EXPIRED_KEY && event.newValue) {
-        window.location.href = "/login?expired=true";
+        window.location.href = "<%= request.getContextPath() %>/login?expired=true";
     }
 
 });
@@ -1247,6 +1260,8 @@ document.addEventListener("visibilitychange", () => {
 });
 
 </script>
+
+<script src="<%= request.getContextPath() %>/js/session-guard.js" data-context-path="<%= request.getContextPath() %>"></script>
 
 </body>
 </html>

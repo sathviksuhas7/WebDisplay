@@ -12,6 +12,13 @@ public interface SupportTicketService {
 
     SupportTicketDto createTicket(Long customerId, SupportTicketDto dto);
 
+    /**
+     * Helpdesk raises a ticket for a customer who called or visited.
+     * The ticket belongs to the customer; a Helpdesk note records who raised it and how.
+     */
+    SupportTicketDto createTicketOnBehalf(
+            Long customerId, SupportTicketDto dto, Long helpdeskUserId, String channel);
+
     List<SupportTicketDto> getCustomerTickets(Long customerId);
 
     List<TicketConversationMessageDto> getCustomerConversation(

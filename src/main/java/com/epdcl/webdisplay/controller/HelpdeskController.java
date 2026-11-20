@@ -7,8 +7,12 @@ import com.epdcl.webdisplay.entity.Role;
 import com.epdcl.webdisplay.repo.EmployeeRepository;
 import com.epdcl.webdisplay.service.impl.CustomerService;
 import com.epdcl.webdisplay.service.impl.AccountService;
+import com.epdcl.webdisplay.service.impl.SupportTicketService;
+import com.epdcl.webdisplay.dto.SupportTicketDto;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import com.epdcl.webdisplay.audit.AuditService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,14 +26,20 @@ public class HelpdeskController {
     private final CustomerService customerService;
     private final AccountService accountService;
     private final EmployeeRepository employeeRepository;
+    private final SupportTicketService ticketService;
+    private final AuditService auditService;
 
     public HelpdeskController(
             CustomerService customerService,
             AccountService accountService,
-            EmployeeRepository employeeRepository) {
+            EmployeeRepository employeeRepository,
+            SupportTicketService ticketService,
+            AuditService auditService) {
         this.customerService = customerService;
         this.accountService = accountService;
         this.employeeRepository = employeeRepository;
+        this.ticketService = ticketService;
+        this.auditService = auditService;
     }
 
     // Allow access only to logged-in Helpdesk employees and managers
@@ -56,6 +66,28 @@ public class HelpdeskController {
                     "Only Helpdesk employees can access this information."
             );
         }
+    }
+
+
+    /** Create a ticket for a customer who contacted the bank by phone or in person. */
+    @PostMapping("/customers/{customerId}/tickets")
+    public ResponseEntity<?> createTicketOnBehalf(
+            @PathVariable Long customerId,
+            @RequestBody SupportTicketDto dto,
+            @RequestParam(defaultValue = "PHONE_CALL") String channel,
+            HttpSession session,
+            HttpServletRequest request) {
+        checkHelpdeskAccess(session);
+        User user = (User) session.getAttribute("loggedInUser");
+        SupportTicketDto created =
+                ticketService.createTicketOnBehalf(customerId, dto, user.getId(), channel);
+        auditService.recordActivity(
+                user,
+                "HELPDESK_TICKET_RAISED_FOR_CUSTOMER",
+                "Ticket ID " + created.getTicketId() + " raised for customer ID " + customerId
+                        + " via " + channel,
+                request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping("/customers/search")

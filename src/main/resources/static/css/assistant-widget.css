@@ -1,0 +1,183 @@
+/* WebDisplay chat assistant (see assistant-widget.js) */
+.wda-launcher {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1300;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 58px;
+    min-width: 58px;
+    margin: 0;
+    padding: 0 20px 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background-color: #1d4ed8;
+    background-image: linear-gradient(135deg, #1d4ed8, #17345d);
+    color: #fff;
+    font: 600 15px/1 Arial, Helvetica, sans-serif;
+    box-shadow: 0 10px 30px rgba(23, 52, 93, 0.35);
+    cursor: pointer;
+    width: auto;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.wda-launcher:hover { background-color: #1d4ed8; background-image: linear-gradient(135deg, #2563eb, #1e3a6e); transform: translateY(-2px); box-shadow: 0 14px 34px rgba(23, 52, 93, 0.42); }
+.wda-launcher:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.wda-launcher.open { padding: 0; width: 58px; justify-content: center; }
+
+.wda-window {
+    position: fixed;
+    right: 24px;
+    bottom: 96px;
+    z-index: 1300;
+    width: min(390px, calc(100vw - 32px));
+    height: min(600px, calc(100vh - 130px));
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #dbe3ee;
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+    font-family: Arial, Helvetica, sans-serif;
+    color: #1e293b;
+}
+.wda-window.open { display: flex; animation: wda-pop 0.18s ease-out; }
+@keyframes wda-pop { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+.wda-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 14px 14px 16px;
+    background-color: #1d4ed8;
+    background-image: linear-gradient(135deg, #1d4ed8, #17345d);
+    color: #fff;
+}
+.wda-title { display: flex; align-items: center; gap: 10px; }
+.wda-title strong { display: block; font-size: 15px; color: #fff; }
+.wda-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #dbeafe; margin-top: 3px; }
+.wda-status i { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; display: inline-block; }
+.wda-header-actions { display: flex; gap: 4px; }
+.wda-icon-btn {
+    width: 36px; height: 36px; margin: 0; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 10px; background: transparent; color: #fff; cursor: pointer;
+}
+.wda-icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+.wda-avatar {
+    flex: 0 0 auto;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #e0ecff; color: #1d4ed8; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+}
+.wda-header .wda-avatar { width: 38px; height: 38px; background: rgba(255, 255, 255, 0.18); color: #fff; }
+
+.wda-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px 8px;
+    background: #f5f7fb;
+    scroll-behavior: smooth;
+}
+.wda-row { display: flex; align-items: flex-end; gap: 8px; margin: 0 0 12px; }
+.wda-row.wda-user { justify-content: flex-end; }
+.wda-bubble {
+    position: relative;
+    max-width: 82%;
+    padding: 10px 13px 18px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.wda-bubble > span { display: block; }
+.wda-bot .wda-bubble { background: #ffffff; color: #1e293b; border: 1px solid #e3e9f2; border-bottom-left-radius: 5px; }
+.wda-user .wda-bubble { background: #1d4ed8; color: #ffffff; border-bottom-right-radius: 5px; }
+.wda-bubble.wda-error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.wda-li { position: relative; padding-left: 14px; margin: 3px 0; }
+.wda-li::before { content: ""; position: absolute; left: 2px; top: 0.6em; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+.wda-li.wda-num { padding-left: 0; }
+.wda-li.wda-num::before { display: none; }
+.wda-time { position: absolute; right: 10px; bottom: 4px; font-size: 10px; opacity: 0.6; }
+
+.wda-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.wda-action {
+    width: auto; margin: 0; padding: 7px 12px;
+    border: 1px solid #bfd3f6; border-radius: 999px;
+    background: #eef4ff; color: #1d4ed8; font: 600 13px Arial, sans-serif; cursor: pointer;
+}
+.wda-action:hover { background: #dce8ff; }
+
+.wda-chips {
+    display: flex; gap: 6px; overflow-x: auto; padding: 8px 12px 4px;
+    background: #f5f7fb; scrollbar-width: thin;
+}
+.wda-chip {
+    flex: 0 0 auto; width: auto; margin: 0; padding: 7px 12px;
+    border: 1px solid #cbd5e1; border-radius: 999px;
+    background: #ffffff; color: #1e293b; font: 13px Arial, sans-serif; cursor: pointer; white-space: nowrap;
+}
+.wda-chip:hover { background: #eef4ff; border-color: #1d4ed8; color: #1d4ed8; }
+
+.wda-compose {
+    display: flex; align-items: flex-end; gap: 8px;
+    padding: 10px 12px; border-top: 1px solid #e3e9f2; background: #ffffff;
+}
+.wda-compose textarea {
+    flex: 1; min-width: 0; margin: 0;
+    max-height: 120px; min-height: 42px; resize: none;
+    padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 12px;
+    font: 14px/1.4 Arial, sans-serif; box-sizing: border-box; background: #fff; color: #1e293b;
+}
+.wda-compose textarea:focus { outline: 2px solid rgba(29, 78, 216, 0.25); border-color: #1d4ed8; }
+.wda-send {
+    flex: 0 0 auto; width: 42px; height: 42px; margin: 0; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 12px; background: #1d4ed8; color: #fff; cursor: pointer;
+}
+.wda-send:hover { background: #1e40af; }
+.wda-send:disabled { opacity: 0.5; cursor: default; }
+.wda-footnote { margin: 0; padding: 0 12px 10px; font-size: 11px; color: #64748b; background: #fff; }
+.wda-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+.wda-dots { display: inline-flex; gap: 4px; padding: 4px 2px; }
+.wda-dots i { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; animation: wda-bounce 1.2s infinite; }
+.wda-dots i:nth-child(2) { animation-delay: 0.15s; }
+.wda-dots i:nth-child(3) { animation-delay: 0.3s; }
+.wda-typing .wda-bubble { padding-bottom: 10px; }
+@keyframes wda-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+/* Highlight the field the assistant took the user to */
+.wda-highlight { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.55) !important; transition: box-shadow 0.3s; border-radius: 6px; }
+
+@media (max-width: 640px) {
+    .wda-launcher { right: 16px; bottom: 16px; }
+    .wda-launcher-label { display: none; }
+    .wda-launcher { padding: 0; width: 58px; justify-content: center; }
+    .wda-window { right: 0; left: 0; bottom: 0; width: 100%; height: 100%; max-height: 100dvh; border-radius: 0; border: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .wda-window.open, .wda-dots i { animation: none; }
+}
+
+/* Dark theme */
+html.dark-theme .wda-window { background: #131c2e; border-color: #2c3b55; color: #e5ecf6; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6); }
+html.dark-theme .wda-messages, html.dark-theme .wda-chips { background: #0e1626; }
+html.dark-theme .wda-bot .wda-bubble { background: #1a2539; color: #e5ecf6; border-color: #2c3b55; }
+html.dark-theme .wda-user .wda-bubble { background: #2563eb; color: #fff; }
+html.dark-theme .wda-bubble.wda-error { background: #3a1418; color: #fca5a5; border-color: #6b2229; }
+html.dark-theme .wda-avatar { background: #22304a; color: #8cc2ff; }
+html.dark-theme .wda-action { background: #172a46; color: #8cc2ff; border-color: #2f4c78; }
+html.dark-theme .wda-action:hover { background: #1d355a; }
+html.dark-theme .wda-chip { background: #1a2539; color: #e5ecf6; border-color: #33445f; }
+html.dark-theme .wda-chip:hover { background: #172a46; border-color: #60a5fa; color: #8cc2ff; }
+html.dark-theme .wda-compose, html.dark-theme .wda-footnote { background: #131c2e; border-color: #2c3b55; }
+html.dark-theme .wda-compose textarea { background: #0d1626 !important; color: #fff !important; border-color: #3a4a66 !important; }
+html.dark-theme .wda-footnote { color: #9fb0c8; }
+@media (max-width: 640px) {
+    /* Full-screen chat on phones: the header has its own close button. */
+    .wda-launcher.open { display: none; }
+}

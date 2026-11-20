@@ -108,6 +108,13 @@
             font-size: 12px;
         }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-theme.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/numeric-inputs.css">
+    <script src="${pageContext.request.contextPath}/js/site-theme.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <script src="${pageContext.request.contextPath}/js/numeric-inputs.js" defer></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/password-toggle.css">
+    <script src="${pageContext.request.contextPath}/js/password-toggle.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/session-guard.js" data-context-path="${pageContext.request.contextPath}"></script>
 </head>
 
 <body>

@@ -204,9 +204,16 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-theme.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/numeric-inputs.css">
+    <script src="${pageContext.request.contextPath}/js/site-theme.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <script src="${pageContext.request.contextPath}/js/numeric-inputs.js" defer></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/dashboard-nav.css">
+    <script src="${pageContext.request.contextPath}/js/dashboard-nav.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/session-guard.js" data-context-path="${pageContext.request.contextPath}"></script>
 </head>
 
-<body>
+<body data-dashboard="employee">
 
 <header>
     <h2>WebDisplay | Employee Portal</h2>

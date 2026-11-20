@@ -358,9 +358,18 @@
 
 
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-theme.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/numeric-inputs.css">
+    <script src="${pageContext.request.contextPath}/js/site-theme.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <script src="${pageContext.request.contextPath}/js/numeric-inputs.js" defer></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/dashboard-nav.css">
+    <script src="${pageContext.request.contextPath}/js/dashboard-nav.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/session-guard.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/assistant-widget.css">
+    <script src="${pageContext.request.contextPath}/js/assistant-widget.js" data-context-path="${pageContext.request.contextPath}" defer></script>
 </head>
 
-<body>
+<body data-dashboard="customer">
 
 <header>
     <h2>WebDisplay | Customer Portal</h2>
@@ -393,6 +402,8 @@
            Manage Profile Changes
        </button>
    </div>
+
+
 
    <!-- SEPARATE PROFILE CHANGE SECTION -->
    <div class="section" id="profileEditForm" style="display:none; margin-top:20px;">

@@ -1,0 +1,167 @@
+{
+  "name": "WebDisplay Customer AI Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webdisplay-customer-assistant",
+        "responseMode": "responseNode",
+        "options": {},
+        "authentication": "headerAuth"
+      },
+      "id": "webdisplay-webhook",
+      "name": "Customer Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -700,
+        0
+      ],
+      "webhookId": "webdisplay-customer-assistant"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item=$input.first().json; const body=item.body||item; if(typeof body.message!=='string'||!body.message.trim()||body.message.length>2000) throw new Error('Invalid message'); return [{json:{sessionId:body.sessionId,message:body.message,customerContext:body.customerContext||{}}}];"
+      },
+      "id": "validate-request",
+      "name": "Validate Backend Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'You are WebDisplay Bank customer support assistant. Use only supplied customer context and general banking/portal knowledge. Never invent account details. Never request passwords, OTPs, PINs, CVV or full account credentials. Never reveal another customer information. Do not initiate transfers, change profile data, approve documents or perform financial actions. Direct those actions to the authenticated portal workflow. Customer context: ' + JSON.stringify($json.customerContext) + '\\nCustomer question: ' + $json.message }}",
+        "options": {
+          "systemMessage": "Be concise, professional and clear. If requested information is not in the supplied context, say you cannot access it here and direct the customer to the relevant portal section. Never claim to have performed an action."
+        }
+      },
+      "id": "ai-agent",
+      "name": "Customer Support AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { reply: $json.output || $json.text || 'I could not generate a response. Please try again.' } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond",
+      "name": "Return Assistant Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "id": "chat-model",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -180,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "sessionKey": "={{ $json.sessionId }}",
+        "contextWindowLength": 8
+      },
+      "id": "chat-memory",
+      "name": "Customer Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -20,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Customer Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Backend Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Backend Request": {
+      "main": [
+        [
+          {
+            "node": "Customer Support AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Support AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Return Assistant Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Customer Support AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Customer Support AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

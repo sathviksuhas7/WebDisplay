@@ -28,14 +28,7 @@
             color: #1e293b;
         }
 
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+        input { width:100%; padding:12px; margin:10px 0; box-sizing:border-box; border:1px solid #ccc; border-radius:5px; }
 
         button {
             width: 100%;
@@ -63,7 +56,21 @@
         .success {
             color: green;
         }
+
+        .message.error, .message.success, .message.info {
+            padding: 10px 12px;
+            border-radius: 6px;
+        }
+        .message.error { background: #fef2f2; color: #b91c1c; }
+        .message.success { background: #f0fdf4; color: #15803d; }
+        .message.info { background: #eff6ff; color: #1d4ed8; }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/site-theme.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/numeric-inputs.css">
+    <script src="${pageContext.request.contextPath}/js/site-theme.js" data-context-path="${pageContext.request.contextPath}"></script>
+    <script src="${pageContext.request.contextPath}/js/numeric-inputs.js" defer></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/password-toggle.css">
+    <script src="${pageContext.request.contextPath}/js/password-toggle.js" defer></script>
 </head>
 
 <body>
@@ -78,24 +85,20 @@
         <input type="text"
                name="username"
                placeholder="Enter Username"
+               autocomplete="username"
+               autofocus
                required>
 
-        <input type="password"
-               name="password"
-               placeholder="Enter Password"
-               required>
+        <input type="password" id="loginPassword" name="password"
+               placeholder="Enter Password" autocomplete="current-password" required>
 
         <button type="submit">Login</button>
 
     </form>
 
-    <div class="message error">
-        ${error}
-    </div>
-
-    <div class="message success">
-        ${param.logout != null ? 'You have been logged out successfully!' : ''}
-    </div>
+    <div class="message error" role="alert" ${empty error ? 'hidden' : ''}>${error}</div>
+    <div class="message success" role="status" ${param.logout == null ? 'hidden' : ''}>You have been logged out successfully.</div>
+    <div class="message info" role="status" ${param.expired == null || param.logout != null || not empty error ? 'hidden' : ''}>Your session has ended. Please log in again.</div>
 
 </div>
 
