@@ -54,6 +54,10 @@ public class AdminController {
                         : employee.getDesignation().trim());
     }
 
+    private boolean isValidOptionalMobile(String phone) {
+        return phone == null || phone.isBlank() || phone.matches("^[6-9][0-9]{9}$");
+    }
+
     private boolean managerAlreadyExists(Long excludedEmployeeId) {
         return employeeService.getAllEmployees()
                 .stream()
@@ -74,10 +78,11 @@ public class AdminController {
                 || request.getEmployeeName() == null
                 || request.getEmployeeName().isBlank()
                 || request.getRole() == null
-                || !isValidEmployeeType(request.getEmployeeType())) {
+                || !isValidEmployeeType(request.getEmployeeType())
+                || !isValidOptionalMobile(request.getPhone())) {
 
             return ResponseEntity.badRequest()
-                    .body("Username, password, employee name, role and valid employee type (PRIVATE or DEPARTMENT) are required.");
+                    .body("Enter the required staff details, a valid employee type and a 10-digit phone number.");
         }
 
         if (request.getRole() != Role.EMPLOYEE
@@ -157,6 +162,10 @@ public class AdminController {
 
             return ResponseEntity.badRequest()
                     .body("Employee name is required.");
+        }
+
+        if (!isValidOptionalMobile(request.getPhone())) {
+            return ResponseEntity.badRequest().body("Enter a valid 10-digit mobile number.");
         }
 
         if (request.getEmployeeType() != null

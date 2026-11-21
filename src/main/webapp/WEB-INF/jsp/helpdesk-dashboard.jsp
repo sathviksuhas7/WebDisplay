@@ -375,7 +375,8 @@
         </div>
     </div>
 
-    <div class="section" id="createTicketForCustomerSection">
+    <div class="section" id="createTicketForCustomerSection"
+         style="${isHelpdeskManager ? 'display:none;' : ''}">
         <h2>Raise a Ticket for a Customer</h2>
         <p class="muted">Use this when a customer calls or visits the branch. The ticket is created in the customer's name and they can follow it from their own dashboard.</p>
 

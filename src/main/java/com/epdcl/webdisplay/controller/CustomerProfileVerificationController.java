@@ -59,9 +59,7 @@ public class CustomerProfileVerificationController {
     }
 
     private boolean isValidPhone(String phone) {
-        String normalized = normalizePhone(phone);
-        return normalized != null
-                && normalized.matches("^\\+?[1-9][0-9]{7,14}$");
+        return phone != null && phone.matches("^[6-9][0-9]{9}$");
     }
 
     private Customer getCustomer(Long userId) {
@@ -105,7 +103,7 @@ public class CustomerProfileVerificationController {
         if (newPhone == null
                 || !isValidPhone(newPhone)) {
             throw new IllegalArgumentException(
-                    "Enter a valid phone number with 8 to 15 digits. Use + for the country code if needed.");
+                    "Enter a valid 10-digit mobile number.");
         }
 
         if (newPhone.equals(customer.getPhone())) {

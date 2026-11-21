@@ -267,7 +267,7 @@
 
                 <div>
                     <label>Phone</label>
-                    <input id="phone" required>
+                    <input id="phone" type="tel" inputmode="numeric" maxlength="10" pattern="[6-9][0-9]{9}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" required>
                 </div>
 
                 <div>
@@ -297,7 +297,7 @@
 
             <div>
                 <label>Phone Number</label>
-                <input id="searchPhone" placeholder="Enter phone number">
+                <input id="searchPhone" type="tel" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" placeholder="Enter phone number">
             </div>
         </div>
 
@@ -332,6 +332,13 @@
             <input id="accountCustomerId" type="number" required>
 
             <div class="form-grid">
+                <div>
+                    <label>Account Type</label>
+                    <select id="accountType" required>
+                        <option value="SAVINGS">Savings Account</option>
+                        <option value="CURRENT">Current Account</option>
+                    </select>
+                </div>
                 <div>
                     <label>Branch Name</label>
                     <input id="branchName" required>
@@ -431,6 +438,7 @@
                         <th>ID</th>
                         <th>Account Number</th>
                         <th>Holder</th>
+                        <th>Account Type</th>
                         <th>Balance</th>
                         <th>Branch</th>
                         <th>District</th>
@@ -829,6 +837,7 @@
                 "district",
                 document.getElementById("district").value.trim()
             );
+            formData.append("accountType", document.getElementById("accountType").value);
 
             formData.append("document", file);
 
@@ -942,6 +951,7 @@
                 <h3>\${escapeHtml(account.accountNumber)}</h3>
                 <p><strong>Account ID:</strong> \${escapeHtml(account.id)}</p>
                 <p><strong>Holder:</strong> \${escapeHtml(account.accountHolderName)}</p>
+                <p><strong>Account Type:</strong> \${escapeHtml(account.accountType || "SAVINGS")}</p>
                 <p><strong>Balance:</strong> ₹\${Number(account.balance).toLocaleString("en-IN")}</p>
                 <p><strong>Branch:</strong> \${escapeHtml(account.branchName)}</p>
                 <p><strong>District:</strong> \${escapeHtml(account.district)}</p>
@@ -978,6 +988,7 @@
                     <td>\${escapeHtml(account.id)}</td>
                     <td>\${escapeHtml(account.accountNumber)}</td>
                     <td>\${escapeHtml(account.accountHolderName)}</td>
+                    <td>\${escapeHtml(account.accountType || "SAVINGS")}</td>
                     <td>₹\${Number(account.balance).toLocaleString("en-IN")}</td>
                     <td>\${escapeHtml(account.branchName)}</td>
                     <td>\${escapeHtml(account.district)}</td>

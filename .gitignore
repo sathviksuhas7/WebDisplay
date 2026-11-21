@@ -46,8 +46,6 @@ application-local.properties
 
 ### macOS ###
 .DS_Store
-
-
-# Private customer documents
+# Private customer documents and local upload storage
 private-uploads/
 webdisplay-secure-storage/

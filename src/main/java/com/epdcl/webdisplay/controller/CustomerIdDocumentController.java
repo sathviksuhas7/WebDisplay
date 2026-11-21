@@ -42,6 +42,7 @@ public class CustomerIdDocumentController {
             @RequestParam Long customerId,
             @RequestParam String branchName,
             @RequestParam String district,
+            @RequestParam(defaultValue = "SAVINGS") String accountType,
             @RequestParam("document") MultipartFile document,
             HttpSession session) throws Exception {
 
@@ -66,6 +67,7 @@ public class CustomerIdDocumentController {
                         customerId,
                         branchName,
                         district,
+                        accountType,
                         document,
                         loggedInUser.getId()
                 )

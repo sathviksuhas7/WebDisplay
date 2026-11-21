@@ -46,6 +46,10 @@ public class CustomerServiceImpl implements CustomerService {
             String address,
             LocalDate dateOfBirth) {
 
+        if (phone == null || !phone.matches("^[6-9][0-9]{9}$")) {
+            throw new IllegalArgumentException("Enter a valid 10-digit mobile number.");
+        }
+
         User user = userService.createCustomerLogin(
                 username, email, password);
 

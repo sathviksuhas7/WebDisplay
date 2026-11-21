@@ -38,6 +38,9 @@ public class Account {
     @Column(name = "account_holder_name")
     private String accountHolderName;
 
+    @Column(name = "account_type", nullable = false, length = 20)
+    private String accountType = "SAVINGS";
+
     @Column(name = "balance")
     private double balance;
 
@@ -78,6 +81,12 @@ public class Account {
 
     public String getAccountHolderName() {
         return accountHolderName;
+    }
+
+    public String getAccountType() { return accountType; }
+
+    public void setAccountType(String accountType) {
+        this.accountType = accountType;
     }
 
     public void setAccountHolderName(String accountHolderName) {

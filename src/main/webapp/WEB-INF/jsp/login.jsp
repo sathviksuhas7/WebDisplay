@@ -86,6 +86,7 @@
                name="username"
                placeholder="Enter Username"
                autocomplete="username"
+               value="<%= request.getAttribute("username") == null ? "" : org.springframework.web.util.HtmlUtils.htmlEscape((String) request.getAttribute("username")) %>"
                autofocus
                required>
 
@@ -102,5 +103,20 @@
 
 </div>
 
+<script>
+    (function () {
+        // If Back would revisit an earlier login submission, return to the public
+        // home page instead of showing a stale login form.
+        window.addEventListener("popstate", function () {
+            if (window.location.pathname.endsWith("/login")) {
+                window.location.replace("${pageContext.request.contextPath}/");
+            }
+        });
+        // A login page should never be restored from the browser back/forward cache.
+        window.addEventListener("pageshow", function (event) {
+            if (event.persisted) window.location.reload();
+        });
+    })();
+</script>
 </body>
 </html>

@@ -1,101 +1,120 @@
 # WebDisplay – Banking Management System
 
-A web-based banking management application developed using **Java 17, Spring Boot, Spring Security, Spring Data JPA, Hibernate, MySQL, and JSP**.
-
-WebDisplay provides a centralized interface for banking operations with separate access for Admin, Employee, Customer, and Helpdesk roles. The application includes banking transactions, customer management, and Helpdesk workflows, supported by a Spring Boot backend and MySQL database.
-
----
-
-## Overview
-
-WebDisplay is designed to manage banking operations through a web-based application.
-
-The application supports four user roles:
-
-- **Admin:** Access to administrative functionality and staff management.
-- **Employee:** Access to permitted banking operations.
-- **Customer:** Access to customer-related functionality.
-- **Helpdesk:** Access to customer support and ticket management functionality.
-
-Spring Security manages authentication and role-based authorization. Session-based authentication and CSRF protection are used to secure application requests.
+A full-stack banking management application built using **Java 17, Spring Boot, Spring MVC, JSP, Hibernate and MySQL**. WebDisplay provides role-based banking operations, customer management, Helpdesk workflows, secure document processing, audit logging and session management.
 
 ---
 
 ## Application Screenshots
 
 ### Login Page
-
 ![Login Page](screenshots/log.png)
 
 ### Dashboard
-
 ![Dashboard](screenshots/dashboard.png)
 
 ### Account Management
-
 ![Account Management](screenshots/accounts.png)
 
 ### Transaction History
-
 ![Transaction History](screenshots/transactions.png)
+
+---
+
+## User Roles
+
+The application supports five application roles. The Helpdesk Manager is a supervisory designation within the Helpdesk role; the Bank Manager is a separate role.
+
+| Role | Responsibilities |
+|---|---|
+| **Admin** | Staff management, audit history, application settings and global theme management. |
+| **Bank Manager** | ID document verification, address-change approvals and banking oversight. |
+| **Employee** | Customer management, account applications, account creation and permitted banking operations. |
+| **Customer** | Account overview, transfers, beneficiaries, transaction history, statements, profile updates and support requests. |
+| **Helpdesk** | Customer lookup, ticket handling, conversations, investigations and escalation workflows. The Helpdesk Manager supervises assignment and reassignment. |
 
 ---
 
 ## Key Features
 
-### 1. Authentication and Security
+### 1. Banking Operations
+- Account creation with Savings or Current account type.
+- Account activation and deactivation after verification.
+- Deposits, withdrawals and fund transfers.
+- Account balances and transaction history.
+- Customer transaction filters for deposits, withdrawals and transfers.
+- Date-range account statement viewing and PDF download.
+- Beneficiary management and recipient account verification.
+- One account per customer restriction.
 
-- User login and logout.
-- Session-based authentication.
-- Authentication using Spring Security.
-- Role-based authorization.
-- CSRF token protection.
-- Session validation for protected requests.
-- Session invalidation during logout.
-- Restricted access to protected endpoints based on user roles.
+### 2. Customer Management
+- Customer profile and account management.
+- Phone number and email updates with OTP verification.
+- Address-change requests with supporting proof and bank approval.
+- Customer-specific dashboards and transaction history.
 
-### 2. Role-Based Access Control
+### 3. Helpdesk and Ticket Management
+- Create and manage customer support tickets.
+- Customer lookup and account investigation.
+- Raise tickets on behalf of customers who contact the bank by phone, email or branch visit.
+- Tickets raised by Helpdesk agents are initially assigned to the creating agent.
+- Helpdesk Manager assignment and reassignment workflows.
+- Ticket status, priority, remarks, conversations and investigation history.
+- Ticket statistics, filtering and SLA-based escalation.
 
-The application supports four roles:
+### 4. Secure Document Upload
+- Customer identity document and address-proof uploads.
+- Supported formats: PDF, JPG, JPEG and PNG.
+- Maximum file size: 5 MB.
+- File extension, signature and structure validation.
+- Malware scanning using **ClamAV**.
+- PDF reconstruction and sanitisation using **Apache PDFBox**.
+- Image decoding and re-encoding using **Java ImageIO**.
+- Original and reconstructed documents undergo antivirus scanning.
+- Fail-closed handling when antivirus scanning is unavailable.
+- UUID-based filenames and private filesystem storage.
+- Authenticated, role-authorised document viewing and verification.
 
-- Admin
-- Employee
-- Customer
-- Helpdesk
+### 5. Authentication and Session Security
+- Custom session-based authentication filter.
+- Role-based access control for all application roles.
+- CSRF token validation for state-changing requests.
+- Session ID regeneration after login.
+- Session replacement detection and session invalidation.
+- Logout and browser back-navigation protections.
+- Session heartbeat and expiry handling.
+- Mandatory password change for customers using temporary passwords.
 
-Each role has specific permissions enforced through Spring Security.
+### 6. Audit Logging
+- AOP-based audit logging.
+- Records important customer, account, employee and Helpdesk activities.
+- Login, logout, failed-login and session replacement events.
+- Administrative audit history for review.
 
-Role-based endpoint access has been tested to verify that users can access permitted functionality while unauthorized roles are restricted.
+### 7. Customer AI Assistant
+- Floating customer support chat widget.
+- Provides account, transaction, beneficiary and ticket information.
+- Guides customers to relevant application features.
+- Uses authenticated backend requests and session-based customer identity.
+- Read-only: it does not transfer funds or modify customer data.
+- Optional n8n integration for generative AI responses, with fallback to the built-in assistant.
 
-### 3. Banking Operations
+### 8. Admin Theme Management
+- Admin-controlled Light and Dark themes.
+- Theme preview and global theme selection.
+- Theme preference persisted in MySQL and applied across dashboards.
 
-- Deposit money into accounts.
-- Withdraw money from accounts.
-- Transfer funds between accounts.
-- Retrieve account information.
-- Update account balances through banking operations.
-- Persist banking operations in MySQL.
+### 9. REST APIs and API Documentation
+- REST APIs developed using Spring MVC.
+- Layered controller, service and repository architecture.
+- DTO-based data transfer and centralised exception handling.
+- API documentation using **Springdoc OpenAPI** and Swagger UI.
+- API documentation access restricted by application role checks.
 
-### 4. Helpdesk Management
-
-- Search for customers and retrieve customer details.
-- View masked account information.
-- Investigate customer transactions.
-- Manage customer support tickets.
-- Assign support tickets.
-- Update ticket status.
-- Add remarks and maintain ticket history.
-- Access Helpdesk functionality through role-specific permissions.
-
-### 5. REST API Development and Testing
-
-- Developed REST APIs using Spring Boot.
-- Implemented backend functionality using controller, service, and repository layers.
-- Integrated application services with MySQL using Spring Data JPA and Hibernate.
-- Used DTOs and mapper classes for data transfer.
-- Implemented exception handling for application errors.
-- Tested API functionality using Postman.
-- Verified role-specific endpoint permissions and unauthorized access restrictions.
+### 10. Log Aggregation (Optional)
+- Optional local **ELK Stack** configuration (Elasticsearch, Logstash and Kibana).
+- Logstash can ingest multiple `.log` files from the application's `logs/` directory.
+- Kibana provides a searchable view of collected application logs.
+- ELK is separate from the Spring Boot runtime and is intended for local development in the provided configuration.
 
 ---
 
@@ -104,128 +123,100 @@ Role-based endpoint access has been tested to verify that users can access permi
 | Category | Technologies |
 |---|---|
 | Programming Language | Java 17 |
-| Backend Framework | Spring Boot |
-| Web Framework | Spring Web MVC |
-| Security | Spring Security, CSRF Protection |
-| Persistence | Spring Data JPA |
-| ORM Framework | Hibernate |
+| Backend Framework | Spring Boot 4.1.2 |
+| Web Framework | Spring MVC |
 | Frontend | JSP, HTML, CSS, JavaScript |
+| Persistence | Spring Data JPA |
+| ORM | Hibernate |
 | Database | MySQL |
-| Database Connectivity | MySQL Connector/J |
+| Authentication | Custom session authentication filter, CSRF protection |
+| Antivirus | ClamAV |
+| PDF Processing | Apache PDFBox 3.0.5 |
+| Image Processing | Java ImageIO |
+| API Documentation | Springdoc OpenAPI / Swagger |
+| Optional AI Integration | n8n |
+| Optional Log Aggregation | Elasticsearch, Logstash, Kibana |
 | Build Tool | Maven |
 | Development Tools | IntelliJ IDEA, VS Code, Postman |
-| Version Control | Git, GitHub |
+| Version Control | Git and GitHub |
 
 ---
 
 ## Application Architecture
 
-The application follows a layered architecture to separate request handling, business logic, database operations, and presentation.
+WebDisplay follows a layered architecture:
 
 ```text
-              User Interface
-                    |
-                    v
-             JSP / HTML / CSS
-                    |
-                    v
-             Controller Layer
-                    |
-                    v
-              Service Layer
-                    |
-                    v
-             Repository Layer
-                    |
-                    v
-              Hibernate ORM
-                    |
-                    v
-              MySQL Database
+              JSP / JavaScript UI
+                      |
+                      v
+               Spring MVC Controllers
+                      |
+                      v
+                 Service Layer
+                      |
+                      v
+              Spring Data Repositories
+                      |
+                      v
+                Hibernate ORM
+                      |
+                      v
+                 MySQL Database
 ```
 
-### Architecture Responsibilities
-
-- **Controller Layer:** Handles incoming HTTP requests and application responses.
-- **Service Layer:** Implements banking operations, business logic, and validations.
-- **Repository Layer:** Handles database interactions using Spring Data JPA.
-- **Entity Layer:** Represents application data and database entities.
-- **DTO Layer:** Transfers application data between different layers.
-- **Mapper Layer:** Converts entities into DTOs and vice versa.
-- **Exception Layer:** Handles application-specific exceptions.
-- **Security Layer:** Manages authentication, CSRF protection, and role-based access.
-- **Presentation Layer:** Provides the user interface through JSP pages.
+Supporting components include:
+- **Session Authentication Filter:** validates sessions, roles and CSRF tokens.
+- **Audit Layer:** records important application events using AOP.
+- **Document Security Service:** validates, sanitises and scans uploaded documents.
+- **Customer Assistant Service:** handles customer assistant requests and optional n8n integration.
+- **Theme Service:** manages persistent application-wide theme settings.
 
 ---
 
 ## Database
 
-The application uses **MySQL** for persistent data storage.
+WebDisplay uses MySQL with Spring Data JPA and Hibernate.
 
-The main data areas include:
+Main data areas include users and roles, customers, employees, accounts, transactions, beneficiaries, ID documents, address-change requests, support tickets, ticket conversations, audit logs, active sessions and application settings.
 
-- **User:** Stores user information used for authentication and role management.
-- **Account:** Stores banking account information and balances.
-- **Transaction:** Maintains records associated with banking operations.
-- **Support Tickets:** Stores Helpdesk ticket information, assignments, status updates, and remarks.
-
-Spring Data JPA and Hibernate are used for database operations and object-relational mapping.
+The application uses `spring.jpa.hibernate.ddl-auto=validate`; required database migrations must be applied before startup.
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
-
-Make sure the following are installed:
-
-- Java 17 or later
+- Java 17
 - MySQL Server
-- IntelliJ IDEA or VS Code
 - Git
-- Maven
+- IntelliJ IDEA or VS Code
+- ClamAV for document-upload scanning
+
+Optional:
+- Docker Desktop for the local ELK stack.
+- n8n and an AI provider credential for optional generative AI integration.
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/sathviksuhas7/WebDisplay.git
+cd WebDisplay
 ```
 
-### 2. Open the Project
-
-Open the cloned project in IntelliJ IDEA or VS Code.
-
-Allow Maven to download and configure the dependencies defined in `pom.xml`.
-
-### 3. Create the Database
-
-Open MySQL and execute:
+### 2. Create the Database
 
 ```sql
 CREATE DATABASE webdisplay_db;
 ```
 
-Create the required tables and columns according to the application's entity mappings.
+Run the required SQL migration scripts against `webdisplay_db`:
+- `database/remaining-work-migration.sql`
+- `database/account-type-migration.sql`
 
-Check the database configuration before running the application.
+### 3. Configure Environment Variables
 
-### 4. Configure Database Credentials
-
-Open:
-
-```text
-src/main/resources/application.properties
-```
-
-Configure the database connection:
-
-```properties
-spring.datasource.url=${DB_URL}
-spring.datasource.username=${DB_USERNAME}
-spring.datasource.password=${DB_PASSWORD}
-```
-
-Set the following environment variables in your IDE or execution environment:
+Database configuration:
 
 ```text
 DB_URL=jdbc:mysql://localhost:3306/webdisplay_db
@@ -233,61 +224,101 @@ DB_USERNAME=your_mysql_username
 DB_PASSWORD=your_mysql_password
 ```
 
-Do not commit actual database credentials to the repository.
-
-### 5. Run the Application
-
-Run the Spring Boot main application class:
+Document storage and antivirus configuration:
 
 ```text
-WebdisplayApplication.java
+DOCUMENT_UPLOAD_DIR=/path/to/private/document/storage
+DOCUMENT_SCAN_ENABLED=true
+CLAMAV_HOST=127.0.0.1
+CLAMAV_PORT=3310
+CLAMAV_TIMEOUT_MS=10000
 ```
 
-Alternatively, execute:
+ClamAV must be installed, its virus database updated and its daemon running for document uploads to work. Scanning is enabled by default; uploads are blocked if scanning is unavailable.
+
+Optional n8n configuration:
+
+```text
+N8N_AI_WEBHOOK_URL=your_n8n_webhook_url
+N8N_AI_SHARED_SECRET=your_shared_secret
+```
+
+Do not commit real credentials, secrets, private customer documents or local environment files to GitHub.
+
+For detailed setup instructions, see `SECURITY-AND-INTEGRATION-SETUP.md`.
+
+### 4. Build and Run
 
 ```bash
+./mvnw clean compile
 ./mvnw spring-boot:run
 ```
 
-### 6. Access the Application
+### 5. Access the Application
 
-Open your browser:
+Application:
 
 ```text
 http://localhost:1111
 ```
 
+Swagger UI:
+
+```text
+http://localhost:1111/swagger-ui.html
+```
+
+OpenAPI JSON:
+
+```text
+http://localhost:1111/v3/api-docs
+```
+
+Swagger access is restricted by the application's role checks.
+
 ---
 
-## Future Enhancements
+## Optional ELK Setup
 
-The following features are planned for further development:
+With Docker Desktop running, start Elasticsearch, Logstash and Kibana from the project root:
 
-- File and document upload functionality.
-- Uploaded document preview.
-- Scheduling functionality.
+```bash
+docker compose -f elk/docker-compose.yml up -d
+```
+
+Open Kibana at `http://localhost:5601` and create a data view for `webdisplay-logs-*`.
+
+Stop the stack:
+
+```bash
+docker compose -f elk/docker-compose.yml down
+```
+
+The supplied ELK configuration disables Elasticsearch security and is for local development only. Do not expose it publicly or use it in production without authentication, TLS and appropriate access restrictions.
+
+---
+
+## Project Documentation
+
+| File / Folder | Description |
+|---|---|
+| `SECURITY-AND-INTEGRATION-SETUP.md` | Database, ClamAV, API, AI and ELK setup. |
+| `API-SERVICE-INVENTORY.md` | Service and REST controller inventory. |
+| `COMPLETE-IMPLEMENTATION-CHECKLIST.md` | Implementation and testing checklist. |
+| `LOCAL-VERIFICATION-REPORT.md` | Recorded verification results and limitations. |
+| `WHAT-CHANGED-2026-11-19.md` | Summary of recent application changes. |
+| `database/` | Database migration scripts. |
+| `verification/` | SQL scripts for audit and legacy-data review. |
+| `n8n/` | Optional customer AI assistant workflow. |
+| `elk/` | Optional local ELK stack configuration. |
 
 ---
 
 ## Project Status
 
-**Core banking operations, role-based access, and Helpdesk functionality implemented.**
+WebDisplay includes the core banking, customer management, Helpdesk, authentication, audit, document-security and dashboard functionality described above.
 
-The application currently includes:
-
-- Four-role access management.
-- Spring Security authentication and authorization.
-- CSRF protection and session-based authentication.
-- Role-specific access restrictions tested through protected endpoints.
-- Deposits, withdrawals, and fund transfers.
-- Customer lookup and masked account information.
-- Transaction investigation.
-- Helpdesk ticket assignment and status management.
-- Remarks and ticket history.
-- MySQL database integration.
-- REST API development and testing using Postman.
-
-The application is being developed further with additional functionality planned.
+Development and verification are ongoing. End-to-end testing depends on the local MySQL database, ClamAV service, browser workflows and optional n8n/ELK configurations. Refer to `COMPLETE-IMPLEMENTATION-CHECKLIST.md` for remaining verification tasks.
 
 ---
 
@@ -295,4 +326,4 @@ The application is being developed further with additional functionality planned
 
 **O Sathvik Suhas**
 
-Java | Spring Boot | Spring Security | MySQL | Backend Development
+Java | Spring Boot | MySQL | Backend Development

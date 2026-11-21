@@ -52,3 +52,21 @@
 - [ ] Run the original login/session/CSRF and role access flows.
 - [ ] Run customer, employee, Admin, Bank Manager and Helpdesk smoke tests.
 - [ ] Re-run Mend vulnerability scan after dependency updates.
+
+
+## Additional usability fixes (21 Nov 2026)
+- [ ] Logout completes promptly and invalidates the session.
+- [ ] Failed login retains the username but never the password.
+- [ ] Browser Back does not cycle through old login POST pages.
+- [ ] Login works with browser DevTools open; expired form message is concise.
+- [ ] Temporary-password customers can use the change-password page without heartbeat redirect loops.
+- [ ] OTP verification buttons appear before resend controls.
+- [ ] Phone fields accept only 10-digit Indian mobile numbers.
+- [ ] Employee account creation requires Savings or Current account type.
+- [ ] Customer transaction history filters All, Deposits, Withdrawals and Transfers.
+- [ ] Customer can select a date range and open/download a PDF account statement.
+- [ ] Previous transfer messages clear when a new transfer is attempted.
+- [ ] Helpdesk agent-created on-behalf tickets are initially assigned to that agent.
+- [ ] Helpdesk Manager can reassign tickets but cannot create on-behalf tickets; Bank Manager remains a separate role.
+- [ ] Wrong-role page access shows a friendly Access Denied page rather than the Whitelabel error.
+- [ ] Optional local ELK stack ingests multiple log files from `logs/`.

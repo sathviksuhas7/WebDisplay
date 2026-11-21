@@ -279,9 +279,10 @@
                        id="designation"
                        placeholder="Designation">
 
-                <input type="text"
-                       id="phone"
-                       placeholder="Phone Number">
+                <input type="tel" inputmode="numeric" maxlength="10"
+                       pattern="[6-9][0-9]{9}"
+                       oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+                       id="phone" placeholder="Phone Number">
 
             </div>
 
@@ -387,9 +388,10 @@
                        id="editDesignation"
                        placeholder="Designation">
 
-                <input type="text"
-                       id="editPhone"
-                       placeholder="Phone Number">
+                <input type="tel" inputmode="numeric" maxlength="10"
+                       pattern="[6-9][0-9]{9}"
+                       oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+                       id="editPhone" placeholder="Phone Number">
 
                 <select id="editRole" required>
                     <option value="EMPLOYEE">Employee</option>

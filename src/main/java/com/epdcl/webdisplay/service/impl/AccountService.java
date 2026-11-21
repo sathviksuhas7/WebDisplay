@@ -7,6 +7,7 @@ import com.epdcl.webdisplay.dto.HelpdeskAccountDto;
 import com.epdcl.webdisplay.dto.HelpdeskTransactionDto;
 
 import java.util.List;
+import java.time.LocalDate;
 
 public interface AccountService {
 
@@ -52,6 +53,10 @@ public interface AccountService {
     List<TransactionDto> getCustomerTransactionHistory(
             Long accountId,
             Long customerId
+    );
+
+    List<TransactionDto> getCustomerTransactionsForPeriod(
+            Long accountId, Long customerId, LocalDate fromDate, LocalDate toDate
     );
 
     List<HelpdeskAccountDto> getHelpdeskCustomerAccounts(Long customerId);

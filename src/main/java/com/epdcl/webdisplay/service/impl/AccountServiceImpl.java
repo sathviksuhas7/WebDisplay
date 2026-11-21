@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
@@ -139,6 +140,12 @@ public class AccountServiceImpl implements AccountService {
         if (accountDto.getCustomerId() == null) {
             throw new AccountException("Customer ID is required");
         }
+        String accountType = accountDto.getAccountType() == null
+                ? "SAVINGS" : accountDto.getAccountType().trim().toUpperCase();
+        if (!accountType.equals("SAVINGS") && !accountType.equals("CURRENT")) {
+            throw new AccountException("Select a valid account type.");
+        }
+        accountDto.setAccountType(accountType);
 
         if (accountRepository.existsByCustomerCustomerId(
                 accountDto.getCustomerId())) {
@@ -389,6 +396,29 @@ public class AccountServiceImpl implements AccountService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<TransactionDto> getCustomerTransactionsForPeriod(
+            Long accountId, Long customerId, LocalDate fromDate, LocalDate toDate) {
+        if (fromDate == null || toDate == null || fromDate.isAfter(toDate)) {
+            throw new AccountException("Select a valid statement date range.");
+        }
+        if (toDate.isAfter(LocalDate.now())) {
+            throw new AccountException("Statement end date cannot be in the future.");
+        }
+        Account account = accountRepository
+                .findByIdAndCustomerCustomerId(accountId, customerId)
+                .orElseThrow(() -> new AccountException("Account not found for this customer"));
+        List<Transaction> transactions = transactionRepository
+                .findByAccount_IdAndTransactionDateBetweenOrderByTransactionDateDesc(
+                        account.getId(),
+                        fromDate.atStartOfDay(),
+                        toDate.plusDays(1).atStartOfDay().minusNanos(1));
+        return transactions.stream()
+                .map(TransactionMapper::mapToTransactionDto)
+                .collect(Collectors.toList());
+    }
+
     // Edit Account
     @Audited(
             action = "ACCOUNT_UPDATED",
@@ -451,6 +481,7 @@ public class AccountServiceImpl implements AccountService {
         return new CustomerAccountStatementDto(
                 account.getAccountNumber(),
                 account.getAccountHolderName(),
+                account.getAccountType(),
                 account.getBranchName(),
                 account.getDistrict(),
                 account.getBalance(),

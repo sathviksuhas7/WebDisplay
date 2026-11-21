@@ -9,6 +9,7 @@ public class AccountDto implements Serializable {
     private String id;
     private String accountNumber;
     private String accountHolderName;
+    private String accountType;
     private double balance;
     private boolean active;
     private LocalDateTime createdAt;
@@ -37,6 +38,10 @@ public class AccountDto implements Serializable {
     public String getAccountHolderName() {
         return accountHolderName;
     }
+
+    public String getAccountType() { return accountType; }
+
+    public void setAccountType(String accountType) { this.accountType = accountType; }
 
     public void setAccountHolderName(String accountHolderName) {
         this.accountHolderName = accountHolderName;

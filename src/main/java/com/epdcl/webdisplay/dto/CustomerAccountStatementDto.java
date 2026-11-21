@@ -6,6 +6,7 @@ public class CustomerAccountStatementDto {
 
     private String accountNumber;
     private String accountHolderName;
+    private String accountType;
     private String branchName;
     private String district;
     private double currentBalance;
@@ -15,6 +16,7 @@ public class CustomerAccountStatementDto {
     public CustomerAccountStatementDto(
             String accountNumber,
             String accountHolderName,
+            String accountType,
             String branchName,
             String district,
             double currentBalance,
@@ -23,6 +25,7 @@ public class CustomerAccountStatementDto {
 
         this.accountNumber = accountNumber;
         this.accountHolderName = accountHolderName;
+        this.accountType = accountType;
         this.branchName = branchName;
         this.district = district;
         this.currentBalance = currentBalance;
@@ -32,6 +35,7 @@ public class CustomerAccountStatementDto {
 
     public String getAccountNumber() { return accountNumber; }
     public String getAccountHolderName() { return accountHolderName; }
+    public String getAccountType() { return accountType; }
     public String getBranchName() { return branchName; }
     public String getDistrict() { return district; }
     public double getCurrentBalance() { return currentBalance; }

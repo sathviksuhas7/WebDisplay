@@ -3,8 +3,12 @@
 ## 1. Preserve your original project
 Keep the separately supplied `WebDisplay-original-backup-2026-11-18.zip` untouched. Extract this updated project into a new folder. Do not overwrite your only working copy.
 
-## 2. Database migration
-Run `database/remaining-work-migration.sql` against `webdisplay_db` before starting the application. The project uses `spring.jpa.hibernate.ddl-auto=validate`, so the `app_settings` table must exist before startup.
+## 2. Database migrations
+Run the required SQL files against `webdisplay_db` before starting the application:
+- `database/remaining-work-migration.sql` (application settings).
+- `database/account-type-migration.sql` (adds the account type column; existing accounts default to SAVINGS).
+
+The project uses `spring.jpa.hibernate.ddl-auto=validate`, so the required columns and tables must exist before startup.
 
 ## 3. Document upload security
 The ID document upload and re-upload paths now validate:
@@ -36,3 +40,17 @@ Beneficiary add/delete and existing customer profile/address operations are alre
 
 ## 9. Dependencies and build
 This update adds Springdoc OpenAPI and Apache PDFBox. Reload Maven dependencies in IntelliJ, then run `./mvnw clean compile`. A build/runtime success is not claimed until it has been run in your local environment with the required dependencies available.
+
+
+## 10. Optional ELK log aggregation (local development)
+A local Elasticsearch, Logstash and Kibana stack is provided in `elk/` to collect multiple `.log` files from the project's `logs/` directory.
+
+With Docker Desktop running, execute from the project root:
+```bash
+docker compose -f elk/docker-compose.yml up -d
+```
+Open Kibana at `http://localhost:5601` and create a data view for `webdisplay-logs-*`. Stop the stack with:
+```bash
+docker compose -f elk/docker-compose.yml down
+```
+This configuration disables Elasticsearch security and is for local development only. Do not expose it to a network or use it in production without authentication, TLS and access restrictions. ELK is optional; the banking application does not depend on it.

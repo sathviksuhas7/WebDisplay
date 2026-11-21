@@ -68,6 +68,7 @@ public class CustomerIdDocumentService {
             Long customerId,
             String branchName,
             String district,
+            String accountType,
             MultipartFile file,
             Long uploadedByUserId) throws IOException {
 
@@ -80,6 +81,7 @@ public class CustomerIdDocumentService {
         dto.setCustomerId(customerId);
         dto.setBranchName(branchName);
         dto.setDistrict(district);
+        dto.setAccountType(accountType);
 
         // Create using your existing account service and duplicate-account rule.
         AccountDto created = accountService.createAccount(dto);

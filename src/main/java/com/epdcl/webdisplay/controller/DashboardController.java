@@ -1,10 +1,20 @@
 package com.epdcl.webdisplay.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import jakarta.servlet.http.HttpSession;
+import com.epdcl.webdisplay.entity.User;
+import com.epdcl.webdisplay.repo.EmployeeRepository;
 
 @Controller
 public class DashboardController {
+
+    private final EmployeeRepository employeeRepository;
+
+    public DashboardController(EmployeeRepository employeeRepository) {
+        this.employeeRepository = employeeRepository;
+    }
 
     @GetMapping("/admin/dashboard")
     public String adminDashboard() {
@@ -27,7 +37,12 @@ public class DashboardController {
     }
 
     @GetMapping("/helpdesk/dashboard")
-    public String helpdeskDashboard() {
+    public String helpdeskDashboard(HttpSession session, Model model) {
+        User user = (User) session.getAttribute("loggedInUser");
+        boolean manager = user != null && employeeRepository.findByUserId(user.getId())
+                .map(employee -> "HELPDESK_MANAGER".equalsIgnoreCase(employee.getDesignation()))
+                .orElse(false);
+        model.addAttribute("isHelpdeskManager", manager);
         return "helpdesk-dashboard";
     }
 }

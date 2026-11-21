@@ -411,8 +411,10 @@
 
        <h3>Change Phone Number</h3>
        <label for="newPhone">New Phone Number</label>
-       <input type="tel" id="newPhone" maxlength="20"
-              placeholder="Enter phone number with country code (e.g. +971501234567)">
+       <input type="tel" id="newPhone" maxlength="10" inputmode="numeric"
+              pattern="[6-9][0-9]{9}" autocomplete="tel"
+              placeholder="Enter 10-digit mobile number"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
        <button type="button" onclick="requestPhoneOtp()">Send Phone OTPs</button>
        <div id="phoneOtpSection" style="display:none; margin-top:10px;">
            <label for="oldPhoneOtp">OTP sent to existing phone</label>
@@ -421,10 +423,10 @@
            <label for="newPhoneOtp">OTP sent to new phone</label>
            <input type="text" id="newPhoneOtp" maxlength="6"
                   inputmode="numeric" autocomplete="one-time-code">
+           <button type="button" onclick="confirmPhoneChange()">Verify and Update Phone</button>
            <button type="button" id="phoneResendButton" onclick="requestPhoneOtp()">Resend OTPs</button>
            <span id="phoneResendCountdown" class="message" aria-live="polite"></span>
-           <p class="empty">If an OTP is incorrect, you can enter it again while it is valid. Resend only if you did not receive it.</p>
-           <button type="button" onclick="confirmPhoneChange()">Verify and Update Phone</button>
+           <p class="empty">Enter the OTP again if it is incorrect. Resend only if you did not receive it.</p>
        </div>
        <p id="phoneUpdateMessage" class="message" aria-live="polite"></p>
 
@@ -444,10 +446,10 @@
            <label for="emailPhoneOtp">OTP sent to registered phone</label>
            <input type="text" id="emailPhoneOtp" maxlength="6"
                   inputmode="numeric" autocomplete="one-time-code">
+           <button type="button" onclick="confirmEmailChange()">Verify and Update Email</button>
            <button type="button" id="emailResendButton" onclick="requestEmailOtp()">Resend OTPs</button>
            <span id="emailResendCountdown" class="message" aria-live="polite"></span>
-           <p class="empty">If an OTP is incorrect, you can enter it again while it is valid. Resend only if you did not receive it.</p>
-           <button type="button" onclick="confirmEmailChange()">Verify and Update Email</button>
+           <p class="empty">Enter the OTP again if it is incorrect. Resend only if you did not receive it.</p>
        </div>
        <p id="emailUpdateMessage" class="message" aria-live="polite"></p>
 
@@ -465,11 +467,11 @@
            <label for="addressOtp">OTP sent to your registered phone</label>
            <input type="text" id="addressOtp" maxlength="6"
                   inputmode="numeric" autocomplete="one-time-code">
+           <button type="button" onclick="submitAddressChange()">Verify OTP & Submit Request</button>
            <button type="button" id="addressResendButton" onclick="requestAddressOtp()">Resend OTP</button>
            <span id="addressResendCountdown" class="message" aria-live="polite"></span>
-           <p class="empty">If the OTP is incorrect, enter it again while it is valid. Resend only if you did not receive it.</p>
+           <p class="empty">Enter the OTP again if it is incorrect. Resend only if you did not receive it.</p>
        </div>
-       <button type="button" onclick="submitAddressChange()">Submit Address Request</button>
        <div id="addressRequestStatus" class="message" aria-live="polite"></div>
 
        <h3>Address Request History</h3>
@@ -575,6 +577,13 @@
     <div class="section">
         <h2>Transaction History</h2>
 
+        <label for="transactionTypeFilter">Filter transactions</label>
+        <select id="transactionTypeFilter" onchange="renderFilteredTransactions()">
+            <option value="ALL">All transactions</option>
+            <option value="DEPOSIT">Deposits</option>
+            <option value="WITHDRAWAL">Withdrawals</option>
+            <option value="TRANSFER">Transfers</option>
+        </select>
         <div class="table-container">
             <table class="txn-table">
                 <thead>
@@ -604,7 +613,15 @@
     <!-- STATEMENT -->
     <div class="section">
         <h2>Account Statement</h2>
-        <button onclick="loadStatement()">View Account Statement</button>
+        <p>Select the date range for your statement.</p>
+        <div class="form-grid">
+            <div><label for="statementFromDate">From</label><input type="date" id="statementFromDate"></div>
+            <div><label for="statementToDate">To</label><input type="date" id="statementToDate"></div>
+        </div>
+        <button type="button" onclick="loadStatement()">View Statement Details</button>
+        <button type="button" onclick="openStatementPdf()">Open PDF Statement</button>
+        <button type="button" onclick="downloadStatementPdf()">Download PDF</button>
+        <p id="statementMessage" class="message" aria-live="polite"></p>
         <div id="statementDetails"></div>
     </div>
 
@@ -715,6 +732,7 @@
     const API = "<%= request.getContextPath() %>/api";
 
     let selectedAccountId = null;
+    let loadedCustomerTransactions = [];
     let verifiedRecipient = null;
 
     // CSRF TOKEN
@@ -914,10 +932,10 @@
     async function requestPhoneOtp() {
         const newPhone = document.getElementById("newPhone").value.trim();
 
-        const normalizedPhone = newPhone.replace(/[\s().-]/g, "");
+        const normalizedPhone = newPhone;
 
-        if (!/^\+?[1-9][0-9]{7,14}$/.test(normalizedPhone)) {
-            showInlineProfileMessage("phoneUpdateMessage", "Enter a valid phone number with 8 to 15 digits. Include the country code if needed.", false);
+        if (!/^[6-9][0-9]{9}$/.test(normalizedPhone)) {
+            showInlineProfileMessage("phoneUpdateMessage", "Enter a valid 10-digit mobile number.", false);
             return;
         }
 
@@ -936,7 +954,7 @@
             document.getElementById("newPhoneOtp").value = "";
             startOtpResendCooldown("phoneResendButton", "phoneResendCountdown");
 
-            showInlineProfileMessage("phoneUpdateMessage", "Verification OTPs generated. Check the IntelliJ application console for the development OTPs. You can retry an incorrect OTP while it is valid.", true);
+            showInlineProfileMessage("phoneUpdateMessage", "OTP sent. Enter both codes to verify your phone number.", true);
         } catch (error) {
             showInlineProfileMessage("phoneUpdateMessage", "Unable to send phone OTPs: " + error.message, false);
         }
@@ -982,7 +1000,7 @@
             showInlineProfileMessage("phoneUpdateMessage", "Phone number updated successfully.", true);
             await loadProfile();
         } catch (error) {
-            showInlineProfileMessage("phoneUpdateMessage", "Phone update failed: " + error.message + " If the OTP has not expired, you can correct it and try again. Use Resend OTPs if you did not receive it.", false);
+            showInlineProfileMessage("phoneUpdateMessage", "Phone update failed: " + error.message + " Correct the OTP and try again, or resend it if needed.", false);
         }
     }
 
@@ -1011,7 +1029,7 @@
             document.getElementById("emailPhoneOtp").value = "";
             startOtpResendCooldown("emailResendButton", "emailResendCountdown");
 
-            showInlineProfileMessage("emailUpdateMessage", "Email verification OTPs generated. Check the IntelliJ application console for the development OTPs. You can retry an incorrect OTP while it is valid.", true);
+            showInlineProfileMessage("emailUpdateMessage", "OTP sent. Enter the codes to verify your email address.", true);
         } catch (error) {
             showInlineProfileMessage("emailUpdateMessage", "Unable to send email OTPs: " + error.message, false);
         }
@@ -1060,7 +1078,7 @@
 
             showInlineProfileMessage("emailUpdateMessage", "Email address updated successfully.", true);
         } catch (error) {
-            showInlineProfileMessage("emailUpdateMessage", "Email update failed: " + error.message + " If the OTP has not expired, you can correct it and try again. Use Resend OTPs if you did not receive it.", false);
+            showInlineProfileMessage("emailUpdateMessage", "Email update failed: " + error.message + " Correct the OTP and try again, or resend it if needed.", false);
         }
     }
 
@@ -1081,7 +1099,7 @@
 
             status.className = "message success-message";
             status.textContent =
-                "Address verification OTP generated. Check the IntelliJ application console for the development OTP. You can retry an incorrect OTP while it is valid.";
+                "OTP sent. Enter it to verify your address-change request.";
         } catch (error) {
             status.className = "message error-message";
             status.textContent = "Unable to send address OTP: " + error.message;
@@ -1188,7 +1206,7 @@
             await loadAddressRequests();
         } catch (error) {
             status.className = "message error-message";
-            status.textContent = "Unable to submit address request: " + error.message + " If the OTP has not expired, correct it and try again. Use Resend OTP if you did not receive it.";
+            status.textContent = "Unable to submit request: " + error.message + " Correct the OTP and try again, or resend it if needed.";
         }
     }
 
@@ -1297,6 +1315,8 @@
                     <h3>\${escapeHtml(account.accountNumber)}</h3>
                     <p><strong>Holder:</strong>
                         \${escapeHtml(account.accountHolderName)}</p>
+                    <p><strong>Account Type:</strong>
+                        \${escapeHtml(account.accountType || "SAVINGS")}</p>
                     <p><strong>Branch:</strong>
                         \${escapeHtml(account.branchName)}</p>
                     <p><strong>District:</strong>
@@ -1317,6 +1337,10 @@
     // SELECT ACCOUNT
     async function selectAccount(accountId) {
         selectedAccountId = accountId;
+        document.getElementById("transactionTypeFilter").value = "ALL";
+        loadedCustomerTransactions = [];
+        document.getElementById("transactionTable").innerHTML =
+            '<tr><td colspan="8">Loading transactions...</td></tr>';
 
         document.getElementById("balanceDetails").innerHTML =
             "Loading account balance...";
@@ -1332,6 +1356,10 @@
                     <div class="stat-card">
                         <h3>Account Number</h3>
                         <p>\${escapeHtml(statement.accountNumber)}</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Account Type</h3>
+                        <p>\${escapeHtml(statement.accountType || "SAVINGS")}</p>
                     </div>
                     <div class="stat-card">
                         <h3>Current Balance</h3>
@@ -1367,50 +1395,98 @@
 
     // LOAD TRANSACTIONS
     async function loadTransactions() {
-
         if (!selectedAccountId) return;
-
+        const tbody = document.getElementById("transactionTable");
+        tbody.innerHTML = '<tr><td colspan="8">Loading transactions...</td></tr>';
         try {
-            const transactions = await apiRequest(
+            loadedCustomerTransactions = await apiRequest(
                 API + "/customer/accounts/" +
                 encodeURIComponent(selectedAccountId) + "/transactions"
             );
-
-            const tbody = document.getElementById("transactionTable");
-
-            if (!transactions || transactions.length === 0) {
-                tbody.innerHTML =
-                    '<tr><td colspan="8">No transactions found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = transactions.map(transaction => `
-                <tr>
-                    <td><span class="txn-ref">\${escapeHtml(transaction.referenceNumber || "-")}</span></td>
-                    <td>\${escapeHtml((transaction.transactionType || "-").replace(/_/g, " "))}</td>
-                    <td>\${accountCell(transaction.toAccountName, transaction.toAccountNumber)}</td>
-                    <td class="amount">₹\${Number(transaction.amount).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2
-                    })}</td>
-                    <td><span class="badge \${escapeHtml(transaction.status || "")}">
-                        \${escapeHtml(transaction.status || "-")}
-                    </span></td>
-                    <td>\${formatDate(transaction.transactionDate)}</td>
-                    <td class="amount">₹\${Number(transaction.balanceAfterTransaction).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2
-                    })}</td>
-                    <td class="desc">\${escapeHtml(transaction.description || "-")}</td>
-                </tr>
-            `).join("");
-
+            renderFilteredTransactions();
         } catch (error) {
+            loadedCustomerTransactions = [];
             showError("transactionTable", error);
         }
+    }
+
+    function renderFilteredTransactions() {
+        const tbody = document.getElementById("transactionTable");
+        const filter = document.getElementById("transactionTypeFilter").value;
+        const rows = (loadedCustomerTransactions || []).filter(transaction => {
+            const type = String(transaction.transactionType || "").toUpperCase();
+            if (filter === "ALL") return true;
+            if (filter === "DEPOSIT") return type === "DEPOSIT";
+            if (filter === "WITHDRAWAL") return type === "WITHDRAWAL";
+            return type.startsWith("TRANSFER");
+        });
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="8">No transactions match this filter.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(transaction => `
+            <tr>
+                <td><span class="txn-ref">\${escapeHtml(transaction.referenceNumber || "-")}</span></td>
+                <td>\${escapeHtml((transaction.transactionType || "-").replace(/_/g, " "))}</td>
+                <td>\${accountCell(transaction.toAccountName, transaction.toAccountNumber)}</td>
+                <td class="amount">₹\${Number(transaction.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                <td><span class="badge \${escapeHtml(transaction.status || "")}">\${escapeHtml(transaction.status || "-")}</span></td>
+                <td>\${formatDate(transaction.transactionDate)}</td>
+                <td class="amount">₹\${Number(transaction.balanceAfterTransaction).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                <td class="desc">\${escapeHtml(transaction.description || "-")}</td>
+            </tr>
+        `).join("");
+    }
+
+    function getStatementDates() {
+        const from = document.getElementById("statementFromDate").value;
+        const to = document.getElementById("statementToDate").value;
+        if (!from || !to) throw new Error("Select both start and end dates.");
+        if (from > to) throw new Error("Start date must not be after end date.");
+        return { fromDate: from, toDate: to };
+    }
+
+    function statementPdfUrl() {
+        if (!selectedAccountId) throw new Error("Select an account first.");
+        const dates = getStatementDates();
+        return API + "/customer/accounts/" + encodeURIComponent(selectedAccountId)
+            + "/statement/pdf?fromDate=" + encodeURIComponent(dates.fromDate)
+            + "&toDate=" + encodeURIComponent(dates.toDate);
+    }
+
+    function openStatementPdf() {
+        const message = document.getElementById("statementMessage");
+        message.textContent = "";
+        try { window.open(statementPdfUrl(), "_blank", "noopener"); }
+        catch (error) { message.textContent = error.message; }
+    }
+
+    async function downloadStatementPdf() {
+        const message = document.getElementById("statementMessage");
+        message.textContent = "";
+        try {
+            const response = await fetch(statementPdfUrl(), {
+                credentials: "same-origin",
+                cache: "no-store"
+            });
+            if (!response.ok) throw new Error("Unable to generate statement. Please check the selected dates.");
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "WebDisplay-Account-Statement.pdf";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            message.textContent = "Statement downloaded.";
+        } catch (error) { message.textContent = error.message; }
     }
 
     // LOAD ACCOUNT STATEMENT
     async function loadStatement() {
         const container = document.getElementById("statementDetails");
+        document.getElementById("statementMessage").textContent = "";
 
         if (!selectedAccountId) {
             container.innerHTML =
@@ -1430,6 +1506,8 @@
                         \${escapeHtml(statement.accountNumber)}</p>
                     <p><strong>Account Holder:</strong>
                         \${escapeHtml(statement.accountHolderName)}</p>
+                    <p><strong>Account Type:</strong>
+                        \${escapeHtml(statement.accountType || "SAVINGS")}</p>
                     <p><strong>Branch:</strong>
                         \${escapeHtml(statement.branchName)}</p>
                     <p><strong>District:</strong>
@@ -1444,6 +1522,12 @@
             showError("statementDetails", error);
         }
     }
+
+    document.getElementById("transferAmount").addEventListener("input", function () {
+        const message = document.getElementById("transferMessage");
+        message.textContent = "";
+        message.className = "message";
+    });
 
     // VERIFY RECIPIENT
     async function verifyRecipient() {

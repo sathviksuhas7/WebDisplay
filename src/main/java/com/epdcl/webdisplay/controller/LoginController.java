@@ -29,7 +29,7 @@ public class LoginController {
     }
 
     @GetMapping("/login")
-    public String showLoginPage(HttpSession session, HttpServletResponse response) {
+    public String showLoginPage(HttpSession session, HttpServletResponse response, Model model) {
         noStore(response);
 
         // Already signed in with a valid session: go straight to the dashboard
@@ -39,11 +39,21 @@ public class LoginController {
             return redirectFor(user);
         }
 
-        // Reuse the existing login token. Re-generating it on every GET broke
-        // login whenever the browser fetched /login twice (DevTools open,
-        // a second tab, prefetch) because the form then held a stale token.
+        // Keep one CSRF token for the anonymous login session. Repeated GETs
+        // (DevTools, another tab or browser prefetch) must not invalidate forms.
         if (session.getAttribute("csrfToken") == null) {
             session.setAttribute("csrfToken", UUID.randomUUID().toString());
+        }
+
+        Object loginError = session.getAttribute("loginError");
+        Object loginUsername = session.getAttribute("loginUsername");
+        if (loginError != null) {
+            model.addAttribute("error", loginError);
+            session.removeAttribute("loginError");
+        }
+        if (loginUsername != null) {
+            model.addAttribute("username", loginUsername);
+            session.removeAttribute("loginUsername");
         }
         return "login";
     }
@@ -84,8 +94,8 @@ public class LoginController {
 
         if (sessionToken == null || !sessionToken.equals(csrfToken)) {
             session.setAttribute("csrfToken", UUID.randomUUID().toString());
-            model.addAttribute("error",
-                    "Your login page had expired. Please enter your details again.");
+            model.addAttribute("error", "Login page expired. Refresh and try again.");
+            model.addAttribute("username", username);
             return "login";
         }
 
@@ -111,18 +121,17 @@ public class LoginController {
         }
 
         auditService.recordFailedLogin(username, request);
-        model.addAttribute("error", "Invalid username or password");
-        return "login";
+        // Post/Redirect/Get prevents browser Back from replaying old failed-login
+        // POST pages. Keep the username, but never retain the password.
+        session.setAttribute("loginError", "Invalid username or password.");
+        session.setAttribute("loginUsername", username);
+        return "redirect:/login?failed=true";
     }
 
     @PostMapping("/logout")
     public String logout(HttpServletRequest request, HttpSession session, HttpServletResponse response) {
 
         noStore(response);
-        // Tell the browser to drop cached copies of pages (including the
-        // back/forward cache) so "Back" cannot show the old dashboard.
-        response.setHeader("Clear-Site-Data", "\"cache\"");
-
         User user = (User) session.getAttribute("loggedInUser");
 
         // Logout must complete even if audit persistence has a temporary problem.

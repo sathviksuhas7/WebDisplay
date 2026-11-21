@@ -315,7 +315,9 @@ public class SupportTicketServiceImpl implements SupportTicketService {
     public SupportTicketDto createTicketOnBehalf(
             Long customerId, SupportTicketDto dto, Long helpdeskUserId, String channel) {
 
-        Employee helpdeskEmployee = getHelpdeskEmployee(helpdeskUserId);
+        // Only regular Helpdesk agents raise customer tickets. The Helpdesk
+        // Manager supervises assignment and can reassign tickets afterwards.
+        Employee helpdeskEmployee = getRegularHelpdeskEmployee(helpdeskUserId);
 
         String safeChannel = switch (channel == null ? "" : channel.trim().toUpperCase()) {
             case "BRANCH_VISIT" -> "Branch visit";
@@ -328,6 +330,9 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         SupportTicket ticket = ticketRepository.findById(created.getTicketId())
                 .orElseThrow(() -> new AccountException("Ticket not found"));
+
+        ticket.setAssignedEmployee(helpdeskEmployee);
+        ticketRepository.save(ticket);
 
         saveConversationMessage(
                 ticket,

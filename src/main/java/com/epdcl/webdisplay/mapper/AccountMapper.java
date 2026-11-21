@@ -11,6 +11,8 @@ public class AccountMapper {
 
         account.setAccountNumber(accountDto.getAccountNumber());
         account.setAccountHolderName(accountDto.getAccountHolderName());
+        account.setAccountType(accountDto.getAccountType() == null
+                ? "SAVINGS" : accountDto.getAccountType().trim().toUpperCase());
         account.setBalance(accountDto.getBalance());
         account.setActive(accountDto.isActive());
 
@@ -27,6 +29,7 @@ public class AccountMapper {
         accountDto.setId(String.valueOf(account.getId()));
         accountDto.setAccountNumber(account.getAccountNumber());
         accountDto.setAccountHolderName(account.getAccountHolderName());
+        accountDto.setAccountType(account.getAccountType());
         accountDto.setBalance(account.getBalance());
         accountDto.setActive(account.isActive());
         accountDto.setCreatedAt(account.getCreatedAt());

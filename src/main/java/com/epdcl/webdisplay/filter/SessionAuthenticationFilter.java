@@ -153,7 +153,8 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
          */
         if ("CUSTOMER".equals(role)
                 && currentUser.isMustChangePassword()
-                && !path.equals("/change-password")) {
+                && !path.equals("/change-password")
+                && !path.equals("/api/session/heartbeat")) {
 
             if (path.startsWith("/api/")) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -174,10 +175,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
         if (path.equals("/change-password")
                 && !"CUSTOMER".equals(role)) {
 
-            response.sendError(
-                    HttpServletResponse.SC_FORBIDDEN,
-                    "You are not authorized to access this page.");
-
+            forwardAccessDenied(request, response);
             return;
         }
 
@@ -336,9 +334,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
             } else {
 
-                response.sendError(
-                        HttpServletResponse.SC_FORBIDDEN,
-                        "You are not authorized to access this page.");
+                forwardAccessDenied(request, response);
             }
 
             return;
@@ -353,6 +349,18 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
         response.setDateHeader("Expires", 0);
 
         filterChain.doFilter(request, response);
+    }
+
+    private void forwardAccessDenied(
+            HttpServletRequest request,
+            HttpServletResponse response) throws ServletException, IOException {
+        if (response.isCommitted()) return;
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("text/html;charset=UTF-8");
+        request.setAttribute("accessDeniedMessage",
+                "You are not authorized to access this page.");
+        request.getRequestDispatcher("/WEB-INF/jsp/access-denied.jsp")
+                .forward(request, response);
     }
 
     // HANDLE EXPIRED OR INVALID SESSIONS
