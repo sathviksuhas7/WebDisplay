@@ -105,16 +105,28 @@
 
 <script>
     (function () {
-        // If Back would revisit an earlier login submission, return to the public
-        // home page instead of showing a stale login form.
+        "use strict";
+
+        var homeUrl = "${pageContext.request.contextPath}/";
+
+        // Keep one guard entry after the login page. If Back reaches any older
+        // failed-login form, leave the login history instead of cycling through it.
+        try {
+            window.history.replaceState({ webdisplayLogin: true }, "", window.location.href);
+            window.history.pushState({ webdisplayLoginGuard: true }, "", window.location.href);
+        } catch (e) {
+            // History state may be unavailable in restricted browser contexts.
+        }
+
         window.addEventListener("popstate", function () {
-            if (window.location.pathname.endsWith("/login")) {
-                window.location.replace("${pageContext.request.contextPath}/");
-            }
+            window.location.replace(homeUrl);
         });
-        // A login page should never be restored from the browser back/forward cache.
+
+        // Never restore a stale login form from the back-forward cache.
         window.addEventListener("pageshow", function (event) {
-            if (event.persisted) window.location.reload();
+            if (event.persisted) {
+                window.location.replace(homeUrl);
+            }
         });
     })();
 </script>

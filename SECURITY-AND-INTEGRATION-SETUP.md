@@ -54,3 +54,8 @@ Open Kibana at `http://localhost:5601` and create a data view for `webdisplay-lo
 docker compose -f elk/docker-compose.yml down
 ```
 This configuration disables Elasticsearch security and is for local development only. Do not expose it to a network or use it in production without authentication, TLS and access restrictions. ELK is optional; the banking application does not depend on it.
+
+
+### Helpdesk ticket source migration
+
+Run `database/helpdesk-ticket-source-migration.sql` once against `webdisplay_db` before starting this update. Do not rerun it if `support_tickets.created_via` already exists.

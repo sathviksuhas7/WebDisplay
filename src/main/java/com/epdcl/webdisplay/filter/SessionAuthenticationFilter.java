@@ -272,10 +272,13 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
                                 ||
                                 (HttpMethod.GET.matches(request.getMethod())
                                         && path.equals("/api/id-documents/employee/applications/search"))
+                                || (HttpMethod.POST.matches(request.getMethod())
+                                && path.matches("/api/id-documents/\\d+/reupload"))
                                 ||
                                 (HttpMethod.POST.matches(request.getMethod())
-                                        && path.matches("/api/id-documents/\\d+/reupload"));
-
+                                        && path.equals(
+                                        "/api/id-documents/test/base64-validation"
+                                ));
             } else if ("BANK_MANAGER".equals(role)) {
 
                 // BANK MANAGER: ONLY DOCUMENT VERIFICATION APIs

@@ -35,6 +35,9 @@ public class SupportTicket {
     @Column(nullable = false, length = 30)
     private String status = "OPEN";
 
+    @Column(name = "created_via", nullable = false, length = 30)
+    private String createdVia = "CUSTOMER";
+
     @Column(name = "resolution_remarks", columnDefinition = "TEXT")
     private String resolutionRemarks;
 
@@ -142,6 +145,14 @@ public class SupportTicket {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getCreatedVia() {
+        return createdVia;
+    }
+
+    public void setCreatedVia(String createdVia) {
+        this.createdVia = createdVia;
     }
 
     public String getResolutionRemarks() {

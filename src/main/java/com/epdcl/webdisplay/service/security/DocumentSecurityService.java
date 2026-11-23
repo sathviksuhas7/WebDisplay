@@ -1,5 +1,8 @@
 package com.epdcl.webdisplay.service.security;
 
+
+import org.apache.pdfbox.cos.COSStream;
+import java.io.InputStream;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
@@ -35,6 +38,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.util.Base64;
+
 @Service
 public class DocumentSecurityService {
 
@@ -46,6 +51,9 @@ public class DocumentSecurityService {
     private static final long MAX_IMAGE_PIXELS = 20_000_000L;
     private static final int CLAM_CHUNK_SIZE = 64 * 1024;
     private static final int MAX_SCANNER_RESPONSE = 8192;
+    private static final int MAX_PDF_EMBEDDED_FILES = 20;
+    private static final int MAX_PDF_EMBEDDED_FILE_BYTES = 5 * 1024 * 1024;
+    private static final long MAX_PDF_EMBEDDED_TOTAL_BYTES = 10L * 1024 * 1024;
 
     private static final Set<String> UNSAFE_PDF_KEYS = Set.of(
             "OpenAction",
@@ -100,6 +108,73 @@ public class DocumentSecurityService {
         this.timeoutMs = timeoutMs;
     }
 
+//    public ValidatedDocument validateAndScan(MultipartFile file) {
+//
+//        if (file == null || file.isEmpty()) {
+//            throw new IllegalArgumentException(
+//                    "Please upload an ID document.");
+//        }
+//
+//        if (file.getSize() > MAX_BYTES) {
+//            throw new IllegalArgumentException(
+//                    "File size must not exceed 5 MB.");
+//        }
+//
+//        String originalName = file.getOriginalFilename();
+//
+//        if (originalName == null || originalName.isBlank()) {
+//            throw new IllegalArgumentException(
+//                    "Invalid document filename.");
+//        }
+//
+//        // Handle both Windows and Unix-style path separators.
+//        String safeName = originalName.replace('\\', '/');
+//        safeName = safeName.substring(safeName.lastIndexOf('/') + 1);
+//
+//        int dot = safeName.lastIndexOf('.');
+//
+//        if (dot <= 0 || dot == safeName.length() - 1) {
+//            throw new IllegalArgumentException(
+//                    "Only PDF, JPG, JPEG and PNG files are allowed.");
+//        }
+//
+//        String extension = safeName.substring(dot + 1)
+//                .toLowerCase(Locale.ROOT);
+//
+//        if (!Set.of("pdf", "jpg", "jpeg", "png").contains(extension)) {
+//            throw new IllegalArgumentException(
+//                    "Only PDF, JPG, JPEG and PNG files are allowed.");
+//        }
+//
+//        final byte[] originalBytes;
+//
+//        try {
+//            originalBytes = file.getBytes();
+//        } catch (IOException ex) {
+//            throw new IllegalArgumentException(
+//                    "Unable to read the uploaded document.", ex);
+//        }
+//
+//        if (originalBytes.length == 0 || originalBytes.length > MAX_BYTES) {
+//            throw new IllegalArgumentException(
+//                    "Invalid document size.");
+//        }
+//
+//        String detectedType;
+//
+//        try {
+//            detectedType = validateStructure(originalBytes, extension);
+//        } catch (Exception ex) {
+//            throw new IllegalArgumentException(
+//                    "The uploaded file is not a valid document.", ex);
+//        }
+
+//        validateDeclaredContentType(file.getContentType(), detectedType);
+//
+//        // Scan the original before processing it.
+//        scanWithClamAv(originalBytes);
+
+
     public ValidatedDocument validateAndScan(MultipartFile file) {
 
         if (file == null || file.isEmpty()) {
@@ -119,7 +194,6 @@ public class DocumentSecurityService {
                     "Invalid document filename.");
         }
 
-        // Handle both Windows and Unix-style path separators.
         String safeName = originalName.replace('\\', '/');
         safeName = safeName.substring(safeName.lastIndexOf('/') + 1);
 
@@ -138,16 +212,120 @@ public class DocumentSecurityService {
                     "Only PDF, JPG, JPEG and PNG files are allowed.");
         }
 
-        final byte[] originalBytes;
-
         try {
-            originalBytes = file.getBytes();
+            return validateAndScanBytes(
+                    file.getBytes(),
+                    extension,
+                    file.getContentType()
+            );
         } catch (IOException ex) {
             throw new IllegalArgumentException(
                     "Unable to read the uploaded document.", ex);
         }
+    }
 
-        if (originalBytes.length == 0 || originalBytes.length > MAX_BYTES) {
+    /**
+     * Validates a Base64 document without requiring a filename.
+     * The actual format is identified from the decoded file bytes.
+     */
+    public ValidatedDocument validateBase64AndScan(String base64Data) {
+
+        if (base64Data == null || base64Data.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Base64 document data is required.");
+        }
+
+        String encoded = base64Data.trim();
+
+        // Support data URLs such as data:image/png;base64,...
+        if (encoded.startsWith("data:")) {
+
+            int comma = encoded.indexOf(',');
+
+            if (comma < 0
+                    || !encoded.substring(0, comma)
+                    .toLowerCase(Locale.ROOT).endsWith(";base64")) {
+                throw new IllegalArgumentException(
+                        "Invalid Base64 data URL.");
+            }
+
+            encoded = encoded.substring(comma + 1);
+        }
+
+        // Maximum Base64 length for a 5 MB decoded file.
+        long maxEncodedLength = 4L * ((MAX_BYTES + 2L) / 3L);
+
+        if (encoded.length() > maxEncodedLength) {
+            throw new IllegalArgumentException(
+                    "File size must not exceed 5 MB.");
+        }
+
+        final byte[] bytes;
+
+        try {
+            bytes = Base64.getDecoder().decode(encoded);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                    "Invalid Base64 document data.", ex);
+        }
+
+        if (bytes.length == 0 || bytes.length > MAX_BYTES) {
+            throw new IllegalArgumentException(
+                    "Invalid document size. Maximum allowed size is 5 MB.");
+        }
+
+        // Identify the format using actual file signatures.
+        String extension;
+
+        if (bytes.length >= 8
+                && (bytes[0] & 255) == 0x89
+                && bytes[1] == 'P'
+                && bytes[2] == 'N'
+                && bytes[3] == 'G'
+                && bytes[4] == 13
+                && bytes[5] == 10
+                && bytes[6] == 26
+                && bytes[7] == 10) {
+
+            extension = "png";
+
+        } else if (bytes.length >= 3
+                && (bytes[0] & 255) == 0xFF
+                && (bytes[1] & 255) == 0xD8
+                && (bytes[2] & 255) == 0xFF) {
+
+            extension = "jpg";
+
+        } else if (bytes.length >= 8
+                && bytes[0] == '%'
+                && bytes[1] == 'P'
+                && bytes[2] == 'D'
+                && bytes[3] == 'F'
+                && bytes[4] == '-') {
+
+            extension = "pdf";
+
+        } else {
+            throw new IllegalArgumentException(
+                    "Unsupported or unrecognized document format. "
+                            + "Only PDF, JPG, JPEG and PNG are allowed.");
+        }
+
+        return validateAndScanBytes(bytes, extension, null);
+    }
+
+    /**
+     * Shared security pipeline for multipart and Base64 uploads.
+     */
+
+    private ValidatedDocument validateAndScanBytes(
+            byte[] originalBytes,
+            String extension,
+            String declaredContentType) {
+
+        if (originalBytes == null
+                || originalBytes.length == 0
+                || originalBytes.length > MAX_BYTES) {
             throw new IllegalArgumentException(
                     "Invalid document size.");
         }
@@ -161,9 +339,28 @@ public class DocumentSecurityService {
                     "The uploaded file is not a valid document.", ex);
         }
 
-        validateDeclaredContentType(file.getContentType(), detectedType);
+//        validateDeclaredContentType(declaredContentType, detectedType);
+//
+//    // Scan original bytes.
+//        scanWithClamAv(originalBytes);
+//
+//        // Scan original bytes.
+//        LOGGER.warning("DOCUMENT SECURITY: Scanning original uploaded bytes. Size: "
+//                + originalBytes.length);
+//
+//        scanWithClamAv(originalBytes);
 
-        // Scan the original before processing it.
+        validateDeclaredContentType(declaredContentType, detectedType);
+
+// Scan embedded files separately before PDF sanitization removes them.
+        if ("application/pdf".equals(detectedType)) {
+            scanEmbeddedPdfFiles(originalBytes);
+        }
+
+// Scan the complete original document.
+        LOGGER.warning("DOCUMENT SECURITY: Scanning original uploaded bytes. Size: "
+                + originalBytes.length);
+
         scanWithClamAv(originalBytes);
 
         final byte[] cleanedBytes;
@@ -176,7 +373,8 @@ public class DocumentSecurityService {
             }
         } catch (Exception ex) {
             throw new IllegalArgumentException(
-                    "The document could not be safely processed. Please upload another copy.",
+                    "The document could not be safely processed. "
+                            + "Please upload another copy.",
                     ex);
         }
 
@@ -185,7 +383,7 @@ public class DocumentSecurityService {
                     "The processed document exceeds the allowed size.");
         }
 
-        // Validate the newly generated file again.
+        // Validate processed file again.
         try {
             String cleanedType = validateStructure(
                     cleanedBytes,
@@ -195,17 +393,60 @@ public class DocumentSecurityService {
                 throw new IllegalArgumentException(
                         "Processed document format mismatch.");
             }
+
         } catch (Exception ex) {
             throw new IllegalArgumentException(
                     "The processed document failed security validation.",
                     ex);
         }
 
-        // Scan the final stored version too.
+        // Scan final processed bytes.
         scanWithClamAv(cleanedBytes);
 
         return new ValidatedDocument(cleanedBytes, detectedType);
     }
+
+
+//    final byte[] cleanedBytes;
+
+//        try {
+//            if ("application/pdf".equals(detectedType)) {
+//                cleanedBytes = cleanPdf(originalBytes);
+//            } else {
+//                cleanedBytes = cleanImage(originalBytes, detectedType);
+//            }
+//        } catch (Exception ex) {
+//            throw new IllegalArgumentException(
+//                    "The document could not be safely processed. Please upload another copy.",
+//                    ex);
+//        }
+//
+//        if (cleanedBytes.length == 0 || cleanedBytes.length > MAX_BYTES) {
+//            throw new IllegalArgumentException(
+//                    "The processed document exceeds the allowed size.");
+//        }
+//
+//        // Validate the newly generated file again.
+//        try {
+//            String cleanedType = validateStructure(
+//                    cleanedBytes,
+//                    extension);
+//
+//            if (!detectedType.equals(cleanedType)) {
+//                throw new IllegalArgumentException(
+//                        "Processed document format mismatch.");
+//            }
+//        } catch (Exception ex) {
+//            throw new IllegalArgumentException(
+//                    "The processed document failed security validation.",
+//                    ex);
+//        }
+//
+//        // Scan the final stored version too.
+//        scanWithClamAv(cleanedBytes);
+//
+//        return new ValidatedDocument(cleanedBytes, detectedType);
+//    }
 
     private void validateDeclaredContentType(
             String declared,
@@ -408,6 +649,138 @@ public class DocumentSecurityService {
         }
     }
 
+
+    /**
+     * Extracts embedded PDF files and scans their decoded contents
+     * independently using ClamAV.
+     *
+     * This is necessary because ClamAV may not detect malware inside
+     * every embedded PDF attachment when scanning the parent PDF.
+     */
+
+    private void scanEmbeddedPdfFiles(byte[] pdfBytes) {
+
+        try (PDDocument pdf = Loader.loadPDF(pdfBytes)) {
+
+            Set<COSBase> visited =
+                    Collections.newSetFromMap(new IdentityHashMap<>());
+
+            long[] totalBytes = {0};
+            int[] fileCount = {0};
+
+            scanEmbeddedPdfObjects(
+                    pdf.getDocumentCatalog().getCOSObject(),
+                    visited,
+                    totalBytes,
+                    fileCount
+            );
+
+        } catch (IOException ex) {
+
+            throw new IllegalArgumentException(
+                    "Unable to inspect embedded files in the PDF.",
+                    ex
+            );
+        }
+    }
+
+    private void scanEmbeddedPdfObjects(
+            COSBase object,
+            Set<COSBase> visited,
+            long[] totalBytes,
+            int[] fileCount) throws IOException {
+
+        if (object == null) {
+            return;
+        }
+
+        if (object instanceof COSObject indirect) {
+            scanEmbeddedPdfObjects(
+                    indirect.getObject(),
+                    visited,
+                    totalBytes,
+                    fileCount
+            );
+            return;
+        }
+
+        if (!visited.add(object)) {
+            return;
+        }
+
+        if (object instanceof COSStream stream) {
+
+            COSBase type = stream.getDictionaryObject(COSName.TYPE);
+
+            if (type instanceof COSName typeName
+                    && "EmbeddedFile".equals(typeName.getName())) {
+
+                fileCount[0]++;
+
+                if (fileCount[0] > MAX_PDF_EMBEDDED_FILES) {
+                    throw new IllegalArgumentException(
+                            "PDF contains too many embedded files.");
+                }
+
+                byte[] embeddedBytes;
+
+                try (InputStream input = stream.createInputStream()) {
+
+                    embeddedBytes = input.readNBytes(
+                            MAX_PDF_EMBEDDED_FILE_BYTES + 1
+                    );
+                }
+
+                if (embeddedBytes.length == 0
+                        || embeddedBytes.length > MAX_PDF_EMBEDDED_FILE_BYTES) {
+
+                    throw new IllegalArgumentException(
+                            "An embedded PDF file exceeds the allowed size.");
+                }
+
+                totalBytes[0] += embeddedBytes.length;
+
+                if (totalBytes[0] > MAX_PDF_EMBEDDED_TOTAL_BYTES) {
+                    throw new IllegalArgumentException(
+                            "Total embedded PDF content exceeds the allowed limit.");
+                }
+
+                LOGGER.info(
+                        "Scanning embedded PDF file. Size: "
+                                + embeddedBytes.length + " bytes");
+
+                // Scan the extracted attachment independently.
+                scanWithClamAv(embeddedBytes);
+            }
+        }
+
+        if (object instanceof COSDictionary dictionary) {
+
+            for (COSName key : dictionary.keySet()) {
+
+                scanEmbeddedPdfObjects(
+                        dictionary.getItem(key),
+                        visited,
+                        totalBytes,
+                        fileCount
+                );
+            }
+        }
+
+        if (object instanceof COSArray array) {
+
+            for (int i = 0; i < array.size(); i++) {
+
+                scanEmbeddedPdfObjects(
+                        array.get(i),
+                        visited,
+                        totalBytes,
+                        fileCount
+                );
+            }
+        }
+    }
+
     private byte[] cleanPdf(byte[] original)
             throws IOException {
 
@@ -555,6 +928,7 @@ public class DocumentSecurityService {
 
             String result = response.toString(
                     StandardCharsets.UTF_8).trim();
+            LOGGER.warning("CLAMAV RESPONSE RECEIVED: [" + result + "]");
 
             if (result.endsWith("FOUND")) {
                 throw new IllegalArgumentException(
@@ -581,8 +955,9 @@ public class DocumentSecurityService {
                     ex);
 
             throw new IllegalStateException(
-                    "Document security scanning is unavailable. "
-                            + "Upload blocked; contact the administrator.",
+                    "Document security scanning is temporarily unavailable. "
+                            + "The upload was blocked for your protection. "
+                            + "Please try again later or contact the administrator.",
                     ex);
         }
     }

@@ -34,7 +34,7 @@
         helpdesk: {
             pinned: [],
             tabs: [
-                { id: "tickets", label: "Tickets", sections: ["#ticketFilterSection", "#newTicketsSection", "#allTicketsSection", "#myTicketsSection", "#employeeTicketSection", "#managerReviewSection", "#ticketConversationSection"] },
+                { id: "tickets", label: "Tickets", sections: ["#ticketFilterSection", "#newTicketsSection", "#agentRaisedTicketsSection", "#allTicketsSection", "#myTicketsSection", "#employeeTicketSection", "#managerReviewSection", "#ticketConversationSection"] },
                 { id: "customers", label: "Customer Lookup", sections: ["Customer Search", "Customer Details", "#createTicketForCustomerSection", "Account Information", "Transaction Investigation"] },
                 { id: "investigation", label: "Investigation History", sections: ["#investigationSection"] },
                 { id: "overview", label: "Statistics", sections: ["#statisticsSection", "#dailyTicketChartSection"] }

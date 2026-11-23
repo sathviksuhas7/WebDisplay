@@ -60,19 +60,29 @@ The application supports five application roles. The Helpdesk Manager is a super
 - Helpdesk Manager assignment and reassignment workflows.
 - Ticket status, priority, remarks, conversations and investigation history.
 - Ticket statistics, filtering and SLA-based escalation.
+- Separate handling of customer-created tickets and Helpdesk-agent-raised tickets.
 
-### 4. Secure Document Upload
+### 4. Secure Document Upload and Validation
 - Customer identity document and address-proof uploads.
 - Supported formats: PDF, JPG, JPEG and PNG.
 - Maximum file size: 5 MB.
-- File extension, signature and structure validation.
-- Malware scanning using **ClamAV**.
-- PDF reconstruction and sanitisation using **Apache PDFBox**.
+- File extension, MIME type, magic-byte signature and structural validation.
+- Corrupt files, renamed files and unsupported formats are rejected.
+- Malware scanning using **ClamAV** through ClamD TCP INSTREAM.
+- PDF inspection, reconstruction and sanitisation using **Apache PDFBox**.
 - Image decoding and re-encoding using **Java ImageIO**.
-- Original and reconstructed documents undergo antivirus scanning.
-- Fail-closed handling when antivirus scanning is unavailable.
-- UUID-based filenames and private filesystem storage.
+- Original and sanitised documents undergo malware scanning.
+- Embedded PDF attachments are extracted and scanned separately.
+- Limits on embedded attachment count and size.
+- Fail-closed handling when antivirus scanning is unavailable or the scan result is inconclusive.
+- UUID-based filenames and private filesystem storage outside the public web directory.
 - Authenticated, role-authorised document viewing and verification.
+
+**Base64 document processing**
+- Accepts Base64-encoded document content and decodes it into bytes.
+- Uses the same document validation and malware-scanning pipeline as multipart uploads.
+- Includes a test-only Base64 validation endpoint that does not store documents.
+- Actual customer ID document uploads proceed to storage only after successful validation and scanning.
 
 ### 5. Authentication and Session Security
 - Custom session-based authentication filter.
@@ -118,6 +128,27 @@ The application supports five application roles. The Helpdesk Manager is a super
 
 ---
 
+## Document Security Verification
+
+The document upload pipeline has been tested with the following scenarios:
+
+| Test scenario | Expected behaviour |
+|---|---|
+| Valid PDF and image documents | Accepted after validation and scanning |
+| Corrupt documents | Rejected |
+| Renamed files with mismatched content | Rejected |
+| Unsupported file formats | Rejected |
+| Files exceeding the size limit | Rejected |
+| Malformed Base64 content | Rejected |
+| EICAR test file | Detected by ClamAV |
+| Infected embedded PDF attachment | Detected during attachment scanning |
+| ClamAV unavailable | Upload blocked |
+| Clean original and sanitised documents | Successfully scanned |
+
+The actual customer ID upload flow was also tested using Postman. ClamAV returned successful scan results for both the original and processed document before the account and document records were stored.
+
+---
+
 ## Technology Stack
 
 | Category | Technologies |
@@ -147,22 +178,22 @@ The application supports five application roles. The Helpdesk Manager is a super
 WebDisplay follows a layered architecture:
 
 ```text
-              JSP / JavaScript UI
+               JSP / JavaScript UI
                       |
                       v
-               Spring MVC Controllers
+                Spring MVC Controllers
                       |
                       v
-                 Service Layer
+                  Service Layer
                       |
                       v
-              Spring Data Repositories
+               Spring Data Repositories
                       |
                       v
-                Hibernate ORM
+                 Hibernate ORM
                       |
                       v
-                 MySQL Database
+                  MySQL Database
 ```
 
 Supporting components include:
@@ -187,6 +218,7 @@ The application uses `spring.jpa.hibernate.ddl-auto=validate`; required database
 ## Getting Started
 
 ### Prerequisites
+
 - Java 17
 - MySQL Server
 - Git
@@ -210,9 +242,13 @@ cd WebDisplay
 CREATE DATABASE webdisplay_db;
 ```
 
-Run the required SQL migration scripts against `webdisplay_db`:
+Run the required SQL migration scripts against `webdisplay_db`, where applicable:
+
 - `database/remaining-work-migration.sql`
 - `database/account-type-migration.sql`
+- `database/helpdesk-ticket-source-migration.sql`
+
+The Helpdesk ticket-source migration adds `support_tickets.created_via`, allowing customer-created and Helpdesk-agent-raised tickets to be handled separately.
 
 ### 3. Configure Environment Variables
 
@@ -236,25 +272,53 @@ CLAMAV_TIMEOUT_MS=10000
 
 ClamAV must be installed, its virus database updated and its daemon running for document uploads to work. Scanning is enabled by default; uploads are blocked if scanning is unavailable.
 
-Optional n8n configuration:
+### 4. OTP Configuration
+
+OTP console logging is intended only for local development.
+
+For local development, enable it using:
+
+```bash
+export PROFILE_OTP_LOG_CODE=true
+```
+
+For production, keep OTP console logging disabled and configure an appropriate OTP delivery mechanism, such as an email or SMS provider. Production OTP delivery must be configured separately.
+
+### 5. Session Cookie Configuration
+
+For local HTTP development, the default is:
+
+```text
+SESSION_COOKIE_SECURE=false
+```
+
+For production deployments over HTTPS:
+
+```text
+SESSION_COOKIE_SECURE=true
+```
+
+### 6. Optional n8n Configuration
 
 ```text
 N8N_AI_WEBHOOK_URL=your_n8n_webhook_url
 N8N_AI_SHARED_SECRET=your_shared_secret
 ```
 
+Both values are required to enable the optional n8n integration.
+
 Do not commit real credentials, secrets, private customer documents or local environment files to GitHub.
 
 For detailed setup instructions, see `SECURITY-AND-INTEGRATION-SETUP.md`.
 
-### 4. Build and Run
+### 7. Build and Run
 
 ```bash
 ./mvnw clean compile
 ./mvnw spring-boot:run
 ```
 
-### 5. Access the Application
+### 8. Access the Application
 
 Application:
 
@@ -306,7 +370,8 @@ The supplied ELK configuration disables Elasticsearch security and is for local 
 | `API-SERVICE-INVENTORY.md` | Service and REST controller inventory. |
 | `COMPLETE-IMPLEMENTATION-CHECKLIST.md` | Implementation and testing checklist. |
 | `LOCAL-VERIFICATION-REPORT.md` | Recorded verification results and limitations. |
-| `WHAT-CHANGED-2026-11-19.md` | Summary of recent application changes. |
+| `WHAT-CHANGED-2026-11-19.md` | Summary of application changes. |
+| `FIXES-2026-11-21.md` | Recent fixes and updates. |
 | `database/` | Database migration scripts. |
 | `verification/` | SQL scripts for audit and legacy-data review. |
 | `n8n/` | Optional customer AI assistant workflow. |
@@ -316,9 +381,11 @@ The supplied ELK configuration disables Elasticsearch security and is for local 
 
 ## Project Status
 
-WebDisplay includes the core banking, customer management, Helpdesk, authentication, audit, document-security and dashboard functionality described above.
+WebDisplay includes banking operations, customer management, Helpdesk workflows, authentication, session security, audit logging, secure document processing and dashboard functionality.
 
-Development and verification are ongoing. End-to-end testing depends on the local MySQL database, ClamAV service, browser workflows and optional n8n/ELK configurations. Refer to `COMPLETE-IMPLEMENTATION-CHECKLIST.md` for remaining verification tasks.
+Document validation and malware-scanning workflows have been tested using automated tests and Postman. Development and verification of the overall application are ongoing. End-to-end testing depends on the local MySQL database, ClamAV service, browser workflows and optional n8n/ELK configurations.
+
+Refer to `COMPLETE-IMPLEMENTATION-CHECKLIST.md` and `LOCAL-VERIFICATION-REPORT.md` for implementation and verification details.
 
 ---
 

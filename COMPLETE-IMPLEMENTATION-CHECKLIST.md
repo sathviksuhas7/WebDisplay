@@ -70,3 +70,6 @@
 - [ ] Helpdesk Manager can reassign tickets but cannot create on-behalf tickets; Bank Manager remains a separate role.
 - [ ] Wrong-role page access shows a friendly Access Denied page rather than the Whitelabel error.
 - [ ] Optional local ELK stack ingests multiple log files from `logs/`.
+
+
+- [ ] Run `database/helpdesk-ticket-source-migration.sql` once to add the `created_via` field for Helpdesk ticket queue separation.

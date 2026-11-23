@@ -485,9 +485,16 @@
         <div id="newTickets" class="result">Loading new tickets...</div>
     </div>
 
+    <div class="section" id="agentRaisedTicketsSection">
+        <h2>Agent-Raised Tickets</h2>
+        <p>Tickets created by Helpdesk employees on behalf of customers. Each ticket is initially assigned to the employee who raised it.</p>
+        <button onclick="loadAgentRaisedTickets()">Refresh Agent-Raised Tickets</button>
+        <div id="agentRaisedTickets" class="result">Loading agent-raised tickets...</div>
+    </div>
+
     <div class="section" id="allTicketsSection">
-        <h2>All Other Tickets</h2>
-        <button onclick="loadAllTickets()">Refresh All Tickets</button>
+        <h2>Other Customer Tickets</h2>
+        <button onclick="loadAllTickets()">Refresh Other Tickets</button>
         <div id="allTickets" class="result">Loading tickets...</div>
     </div>
 
@@ -850,7 +857,7 @@
             try {
                 await loadTicketStatistics();
                 if (currentDesignation === "HELPDESK_MANAGER") {
-                    await Promise.all([loadNewTickets(), loadAllTickets()]);
+                    await Promise.all([loadNewTickets(), loadAgentRaisedTickets(), loadAllTickets()]);
                 }
             } catch (refreshError) {
                 console.warn("Ticket lists could not be refreshed:", refreshError);
@@ -1078,7 +1085,9 @@
             const tickets = await apiRequest("/helpdesk/tickets");
 
             const newTickets = (tickets || []).filter(ticket =>
-                (ticket.status || "").toUpperCase() === "OPEN"
+                (ticket.createdVia || "CUSTOMER").toUpperCase() === "CUSTOMER"
+                && !ticket.assignedEmployeeId
+                && (ticket.status || "").toUpperCase() === "OPEN"
             );
 
             displayTickets(newTickets, "newTickets");
@@ -1086,6 +1095,24 @@
             container.innerText = "Unable to load new tickets: " + error.message;
         }
     }
+
+    async function loadAgentRaisedTickets() {
+        if (currentDesignation !== "HELPDESK_MANAGER") return;
+
+        const container = document.getElementById("agentRaisedTickets");
+
+        try {
+            const tickets = await apiRequest("/helpdesk/tickets");
+            const agentRaised = (tickets || []).filter(ticket =>
+                (ticket.createdVia || "").toUpperCase() === "HELPDESK_AGENT"
+            );
+
+            displayTickets(agentRaised, "agentRaisedTickets");
+        } catch (error) {
+            container.innerText = "Unable to load agent-raised tickets: " + error.message;
+        }
+    }
+
 
     async function loadAllTickets() {
         if (currentDesignation !== "HELPDESK_MANAGER") return;
@@ -1096,7 +1123,11 @@
             const tickets = await apiRequest("/helpdesk/tickets");
 
             const otherTickets = (tickets || []).filter(ticket =>
-                (ticket.status || "").toUpperCase() !== "OPEN"
+                (ticket.createdVia || "CUSTOMER").toUpperCase() === "CUSTOMER"
+                && !(
+                    !ticket.assignedEmployeeId
+                    && (ticket.status || "").toUpperCase() === "OPEN"
+                )
             );
 
             displayTickets(otherTickets, "allTickets");
@@ -1762,6 +1793,7 @@ async function loadRemarks() {
 
             await Promise.all([
                 loadNewTickets(),
+                loadAgentRaisedTickets(),
                 loadAllTickets(),
                 loadPendingReviewTickets()
             ]);
@@ -1799,6 +1831,9 @@ async function loadRemarks() {
             document.getElementById("newTicketsSection")
                 .classList.toggle("hidden", !isManager);
 
+            document.getElementById("agentRaisedTicketsSection")
+                .classList.toggle("hidden", !isManager);
+
             document.getElementById("employeeTicketSection")
                 .classList.toggle("hidden", isManager);
 
@@ -1818,6 +1853,7 @@ async function loadRemarks() {
 
                 await Promise.all([
                     loadNewTickets(),
+                    loadAgentRaisedTickets(),
                     loadAllTickets(),
                     loadPendingReviewTickets(),
                 ]);

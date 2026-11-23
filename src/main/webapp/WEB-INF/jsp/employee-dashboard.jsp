@@ -283,6 +283,11 @@
         </form>
 
         <p id="customerMessage" class="message"></p>
+        <div id="customerCreatedActions" class="hidden" style="margin-top:12px;">
+            <button type="button" onclick="openAccountForCreatedCustomer()">
+                Open Account for This Customer
+            </button>
+        </div>
     </div>
 
     <!-- SEARCH CUSTOMERS -->
@@ -664,6 +669,9 @@
 
             event.preventDefault();
 
+            window.lastCreatedCustomerId = null;
+            document.getElementById("customerCreatedActions").classList.add("hidden");
+
             const customer = {
                 username: document.getElementById("username").value.trim(),
                 email: document.getElementById("email").value.trim(),
@@ -681,7 +689,18 @@
                     body: JSON.stringify(customer)
                 });
 
-                showMessage("customerMessage", result);
+                const resultText = typeof result === "string"
+                    ? result
+                    : (result && result.message ? result.message : "Customer created successfully.");
+
+                const customerIdMatch = resultText.match(/Customer ID\s*:\s*(\d+)/i);
+                if (!customerIdMatch) {
+                    throw new Error("Customer was created, but the generated Customer ID was not returned. Please search for the customer before opening an account.");
+                }
+
+                window.lastCreatedCustomerId = customerIdMatch[1];
+                showMessage("customerMessage", resultText);
+                document.getElementById("customerCreatedActions").classList.remove("hidden");
                 this.reset();
 
             } catch (error) {
@@ -689,6 +708,28 @@
             }
         }
     );
+
+
+    function openAccountForCreatedCustomer() {
+        const customerId = window.lastCreatedCustomerId;
+        if (!customerId) {
+            showMessage("customerMessage", "Create a customer first.", true);
+            return;
+        }
+
+        document.getElementById("accountCustomerId").value = customerId;
+        document.getElementById("customerCreatedActions").classList.add("hidden");
+
+        if (window.WDNav && typeof window.WDNav.show === "function") {
+            window.WDNav.show("open");
+        }
+
+        document.getElementById("accountForm").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+        document.getElementById("accountCustomerId").focus();
+    }
 
 
     // SEARCH CUSTOMERS
@@ -1232,7 +1273,7 @@
 
             tbody.innerHTML = transactions.map(transaction => `
                 <tr>
-                    <td>\${escapeHtml(transaction.transactionId)}</td>
+                    <td>\${escapeHtml(transaction.id)}</td>
                     <td>\${escapeHtml(transaction.transactionType)}</td>
                     <td>₹\${Number(transaction.amount).toLocaleString("en-IN")}</td>
                     <td>\${escapeHtml(transaction.transactionDate)}</td>

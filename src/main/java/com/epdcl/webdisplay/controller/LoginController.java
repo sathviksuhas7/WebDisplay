@@ -85,18 +85,29 @@ public class LoginController {
             @RequestParam String csrfToken,
             HttpServletRequest request,
             HttpSession session,
-            Model model,
             HttpServletResponse response) {
 
         noStore(response);
 
         String sessionToken = (String) session.getAttribute("csrfToken");
 
-        if (sessionToken == null || !sessionToken.equals(csrfToken)) {
+        if (sessionToken == null) {
+            // A session can be recreated after an expired browser session. Issue
+            // a fresh token and use PRG so the browser never keeps a stale form.
             session.setAttribute("csrfToken", UUID.randomUUID().toString());
-            model.addAttribute("error", "Login page expired. Refresh and try again.");
-            model.addAttribute("username", username);
-            return "login";
+            session.setAttribute("loginError",
+                    "Your login page has expired. Please try again.");
+            session.setAttribute("loginUsername", username);
+            return "redirect:/login?csrfExpired=true";
+        }
+
+        if (!sessionToken.equals(csrfToken)) {
+            // Do not rotate a valid session token just because one old tab
+            // submitted a stale token; doing so would invalidate other open tabs.
+            session.setAttribute("loginError",
+                    "Your login page has expired. Please refresh and try again.");
+            session.setAttribute("loginUsername", username);
+            return "redirect:/login?csrfExpired=true";
         }
 
         User user = userService.authenticateUser(username, password);

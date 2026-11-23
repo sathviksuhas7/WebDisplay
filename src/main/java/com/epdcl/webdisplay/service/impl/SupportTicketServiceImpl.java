@@ -102,6 +102,7 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         dto.setDescription(ticket.getDescription());
         dto.setPriority(ticket.getPriority());
         dto.setStatus(ticket.getStatus());
+        dto.setCreatedVia(ticket.getCreatedVia());
         dto.setCustomerRemarks(ticket.getCustomerRemarks());
         dto.setCreatedAt(ticket.getCreatedAt());
         dto.setUpdatedAt(ticket.getUpdatedAt());
@@ -332,7 +333,12 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .orElseThrow(() -> new AccountException("Ticket not found"));
 
         ticket.setAssignedEmployee(helpdeskEmployee);
+        ticket.setCreatedVia("HELPDESK_AGENT");
         ticketRepository.save(ticket);
+
+        created.setCreatedVia("HELPDESK_AGENT");
+        created.setAssignedEmployeeId(helpdeskEmployee.getEmployeeId());
+        created.setAssignedEmployeeName(helpdeskEmployee.getEmployeeName());
 
         saveConversationMessage(
                 ticket,

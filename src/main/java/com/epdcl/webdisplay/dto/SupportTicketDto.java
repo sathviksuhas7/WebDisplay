@@ -12,6 +12,7 @@ public class SupportTicketDto {
     private String description;
     private String priority;
     private String status;
+    private String createdVia;
 
     private String resolutionRemarks;
     private String customerRemarks;
@@ -87,6 +88,14 @@ public class SupportTicketDto {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getCreatedVia() {
+        return createdVia;
+    }
+
+    public void setCreatedVia(String createdVia) {
+        this.createdVia = createdVia;
     }
 
     public String getResolutionRemarks() {
