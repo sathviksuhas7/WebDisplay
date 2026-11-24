@@ -49,3 +49,12 @@ application-local.properties
 # Private customer documents and local upload storage
 private-uploads/
 webdisplay-secure-storage/
+
+
+# ELK generated data
+elk/data/
+
+# Local ELK configuration
+elk/docker-compose.local.yml
+elk/logstash.local.conf
+

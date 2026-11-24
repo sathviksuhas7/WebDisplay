@@ -1,4 +1,4 @@
-# Local development ELK stack. Do not expose these ports publicly.
+
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3

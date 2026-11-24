@@ -1,42 +1,78 @@
-# ELK Stack – Local WebDisplay Log Aggregation
 
-This optional local-development stack collects multiple `.log` files from the WebDisplay `logs/` directory and makes them searchable in Elasticsearch and Kibana.
+# ELK Stack – WebDisplay Centralized Logging
 
-## Requirements
+This folder contains the ELK (Elasticsearch, Logstash, and Kibana) stack for collecting, storing, and visualizing WebDisplay application logs.
 
-- Docker Desktop running.
-- WebDisplay configured to write logs into the project `logs/` directory.
+## Components
 
-## Start
+- **Elasticsearch:** Stores and indexes application logs.
+- **Logstash:** Reads application log files and sends them to Elasticsearch.
+- **Kibana:** Provides a dashboard to search, filter, and analyze logs.
 
-From the project root:
+## Prerequisites
+
+- Docker Desktop installed and running.
+- WebDisplay application configured to generate logs.
+
+## Project Structure
+
+```text
+elk/
+├── docker-compose.yml
+├── logstash.conf
+└── README.md
+```
+
+## Start the ELK Stack
+
+From the WebDisplay project root directory, run:
 
 ```bash
 docker compose -f elk/docker-compose.yml up -d
 ```
 
-Open:
-- Elasticsearch: http://localhost:9200
-- Kibana: http://localhost:5601
-
-In Kibana, open **Discover** and create a data view:
-- Name: `webdisplay-logs-*`
-- Timestamp field: choose `@timestamp` if available.
-
-Logstash watches `/var/log/webdisplay/*.log`, so additional `.log` files placed in the project's `logs/` folder are included.
-
-## Stop
+Check the running containers:
 
 ```bash
-docker compose -f elk/docker-compose.yml down
+docker compose -f elk/docker-compose.yml ps
 ```
 
-To also delete the local Elasticsearch index data:
+## Access the Services
+
+| Service | URL |
+|---|---|
+| Elasticsearch | http://localhost:9200 |
+| Kibana | http://localhost:5601 |
+
+## View Application Logs
+
+1. Start the WebDisplay Spring Boot application.
+2. Ensure the application generates logs in the `logs/` directory.
+3. Open Kibana at http://localhost:5601.
+4. Navigate to **Discover**.
+5. Create a data view using the index pattern:
+
+```text
+application-logs-*
+```
+
+6. Select `@timestamp` as the time field.
+7. View and filter the collected application logs.
+
+## Stop the ELK Stack
 
 ```bash
-docker compose -f elk/docker-compose.yml down -v
+docker compose -f elk/docker-compose.yml stop
 ```
 
-**Security:** This compose file disables Elasticsearch security for local development only. Do not expose these ports or use this configuration in production. Use authentication, TLS, network restrictions, retention policies and secured credentials for any shared or production deployment.
+To start it again:
 
-The ELK stack is optional and separate from the Spring Boot application. The application can run without Docker or ELK.
+```bash
+docker compose -f elk/docker-compose.yml up -d
+```
+
+## Important Notes
+
+- Application log files are generated locally and are not committed to GitHub.
+- Elasticsearch data is stored in a Docker named volume to preserve indexed logs across container restarts.
+- Docker Compose starts Elasticsearch, Logstash, and Kibana together.
